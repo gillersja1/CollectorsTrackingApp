@@ -35,6 +35,8 @@ class SecondFragment : Fragment() {
         binding.buttonSecond.setOnClickListener {
             findNavController().navigate(R.id.action_SecondFragment_to_FirstFragment)
         }
+
+        binding.myNewText.text = getString(R.string.second_page_message)
     }
 
     override fun onDestroyView() {

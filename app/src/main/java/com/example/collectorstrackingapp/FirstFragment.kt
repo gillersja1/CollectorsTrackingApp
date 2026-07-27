@@ -35,6 +35,8 @@ class FirstFragment : Fragment() {
         binding.buttonFirst.setOnClickListener {
             findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment)
         }
+
+        binding.myNewText.text = "Welcome to the Collector's App!"
     }
 
     override fun onDestroyView() {
