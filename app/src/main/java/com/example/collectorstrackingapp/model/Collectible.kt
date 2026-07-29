@@ -13,5 +13,6 @@ data class Collectible(
     val name: String,
     val category: String,
     val description: String,
+    val imagePath: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )

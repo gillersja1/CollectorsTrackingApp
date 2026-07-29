@@ -11,6 +11,8 @@ import com.example.collectorstrackingapp.databinding.FragmentCategoryManagementB
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.viewmodel.CollectibleViewModel
 
+import androidx.navigation.fragment.findNavController
+
 class CategoryManagementFragment : Fragment() {
 
     private var _binding: FragmentCategoryManagementBinding? = null
@@ -29,10 +31,21 @@ class CategoryManagementFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val adapter = CategoryAdapter { category ->
-            collectibleViewModel.deleteCategory(category)
-            Toast.makeText(context, "Category deleted", Toast.LENGTH_SHORT).show()
-        }
+        val adapter = CategoryAdapter(
+            onItemClicked = { category ->
+                val bundle = Bundle().apply {
+                    putString("categoryName", category.name)
+                }
+                findNavController().navigate(
+                    R.id.action_CategoryManagementFragment_to_CategoryDetailsFragment,
+                    bundle
+                )
+            },
+            onDeleteClicked = { category ->
+                collectibleViewModel.deleteCategory(category)
+                Toast.makeText(context, "Category deleted", Toast.LENGTH_SHORT).show()
+            }
+        )
         binding.recyclerViewCategories.adapter = adapter
 
         collectibleViewModel.allCategories.observe(viewLifecycleOwner) { categories ->

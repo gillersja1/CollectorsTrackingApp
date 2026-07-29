@@ -1,67 +1,54 @@
-# Implementation Plan - Search and Filter Collectibles
+# Implementation Plan - Collectible Images
 
-This plan adds a dedicated search page where users can search for collectibles by name and filter them by category.
+This plan adds the ability to attach a picture to each collectible in your collection.
 
 ## Proposed Changes
 
-### 1. Data Layer (Search & Filter)
+### 1. Data Layer (Persistence)
 
-#### [MODIFY] [CollectibleDao.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/data/CollectibleDao.kt)
-- Add a search query method:
-  ```kotlin
-  @Query("SELECT * FROM collectibles WHERE (:query IS NULL OR name LIKE '%' || :query || '%') AND (:category IS NULL OR :category = 'All' OR category = :category) ORDER BY timestamp DESC")
-  fun searchCollectibles(query: String?, category: String?): Flow<List<Collectible>>
-  ```
+#### [MODIFY] [Collectible.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/model/Collectible.kt)
+- Add an optional `imagePath: String?` field to store the local URI or file path of the image.
 
-#### [MODIFY] [CollectibleRepository.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/data/CollectibleRepository.kt)
-- Expose `searchCollectibles(query, category)` from the DAO.
-
-#### [MODIFY] [CollectibleViewModel.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/viewmodel/CollectibleViewModel.kt)
-- Add a method to perform searches: `searchCollectibles(query: String?, category: String?): LiveData<List<Collectible>>`.
+#### [MODIFY] [AppDatabase.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/data/AppDatabase.kt)
+- Increment the database version to `3`.
+- The existing `fallbackToDestructiveMigration()` will handle the schema change for now (note: this will wipe existing data during this update).
 
 ---
 
-### 2. User Interface (Search Screen)
+### 2. UI - Image Selection (Add/Edit Screen)
 
-#### [NEW] [fragment_search.xml](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/res/layout/fragment_search.xml)
-- Layout featuring:
-    - A `SearchView` or `EditText` for the name search.
-    - A `Spinner` or `AutoCompleteTextView` (dropdown) for category filtering (including an "All" option).
-    - A `RecyclerView` to display results (using existing `item_collectible.xml`).
+#### [MODIFY] [fragment_second.xml](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/res/layout/fragment_second.xml)
+- Add an `ImageView` at the top to preview the selected picture.
+- Add a "Choose Image" `Button` or click listener on the `ImageView`.
 
-#### [NEW] [SearchFragment.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/SearchFragment.kt)
-- Logic to:
-    - Initialize the category dropdown with "All" + existing categories.
-    - Observe search parameters and update the results list.
-    - Handle clicks on items to navigate to the Edit screen (reusing `collectibleId` bundle logic).
+#### [MODIFY] [SecondFragment.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/SecondFragment.kt)
+- Implement `ActivityResultLauncher` using `GetContent()` to pick an image from the gallery.
+- Save the selected image URI to the `imagePath` variable.
+- Update `saveCollectible()` to include the image path.
+- Handle displaying the image if editing an existing collectible.
 
 ---
 
-### 3. Navigation & Menu
+### 3. UI - Displaying Images (List & Tiles)
 
-#### [MODIFY] [nav_graph.xml](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/res/navigation/nav_graph.xml)
-- Add `SearchFragment` as a destination.
-- Add an action from `FirstFragment` to `SearchFragment`.
+#### [MODIFY] [item_collectible.xml](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/res/layout/item_collectible.xml)
+- Add an `ImageView` to the card layout (positioned at the top or side).
 
-#### [MODIFY] [menu_main.xml](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/res/menu/menu_main.xml)
-- Add a search icon item:
-  ```xml
-  <item
-      android:id="@+id/action_search"
-      android:icon="@android:drawable/ic_menu_search"
-      android:title="Search"
-      app:showAsAction="ifRoom" />
-  ```
+#### [MODIFY] [CollectibleAdapter.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/CollectibleAdapter.kt)
+- Update the `bind` logic to load the image from the `imagePath` if it exists.
+- I will use the **Coil** library for efficient image loading.
 
-#### [MODIFY] [MainActivity.kt](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/src/main/java/com/example/collectorstrackingapp/MainActivity.kt)
-- Handle the `action_search` click to navigate to the `SearchFragment`.
+#### [MODIFY] [build.gradle.kts](file:///C:/Users/gille/OneDrive/Desktop/GitHub/CollectorsTrackingApp/app/build.gradle.kts)
+- Add the Coil dependency: `implementation("io.coil-kt:coil:2.4.0")`.
 
 ## Verification Plan
 
 ### Manual Verification
-1. **Open Search**: Tap the search icon in the toolbar.
-2. **Search by Name**: Type a partial name (e.g., "Coin") and verify only matching items appear.
-3. **Filter by Category**: Select a category from the dropdown and verify only items in that category appear.
-4. **Combine Both**: Search by name AND filter by category simultaneously.
-5. **Clear Filters**: Select "All" and clear text to see the full list again.
-6. **Navigate from Search**: Click a search result and verify it opens the Edit screen.
+1. **Add Item**: Click (+), choose an image from the gallery, fill in details, and save.
+2. **Verify List**: Ensure the image appears in the main collection list.
+3. **Verify Gallery**: Go to Settings -> Category and ensure the image appears in the 2-column grid.
+4. **Edit Item**: Click an item with an image, verify the preview loads, change the image, and save.
+5. **Delete Item**: Ensure deleting an item works correctly with the image.
+
+> [!CAUTION]
+> Because I am updating the database schema, your existing test items will be cleared during this update.

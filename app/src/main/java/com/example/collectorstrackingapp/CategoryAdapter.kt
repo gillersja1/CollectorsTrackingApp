@@ -8,8 +8,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.collectorstrackingapp.databinding.ItemCategoryBinding
 import com.example.collectorstrackingapp.model.Category
 
-class CategoryAdapter(private val onDeleteClicked: (Category) -> Unit) :
-    ListAdapter<Category, CategoryAdapter.CategoryViewHolder>(CategoriesComparator()) {
+class CategoryAdapter(
+    private val onItemClicked: (Category) -> Unit,
+    private val onDeleteClicked: (Category) -> Unit
+) : ListAdapter<Category, CategoryAdapter.CategoryViewHolder>(CategoriesComparator()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
         return CategoryViewHolder.create(parent)
@@ -17,14 +19,21 @@ class CategoryAdapter(private val onDeleteClicked: (Category) -> Unit) :
 
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
         val current = getItem(position)
-        holder.bind(current, onDeleteClicked)
+        holder.bind(current, onItemClicked, onDeleteClicked)
     }
 
     class CategoryViewHolder(private val binding: ItemCategoryBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(category: Category, onDeleteClicked: (Category) -> Unit) {
+        fun bind(
+            category: Category,
+            onItemClicked: (Category) -> Unit,
+            onDeleteClicked: (Category) -> Unit
+        ) {
             binding.textViewCategoryName.text = category.name
+            binding.textViewCategoryName.setOnClickListener {
+                onItemClicked(category)
+            }
             binding.buttonDeleteCategory.setOnClickListener {
                 onDeleteClicked(category)
             }

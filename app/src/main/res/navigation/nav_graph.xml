@@ -34,7 +34,21 @@
         android:id="@+id/CategoryManagementFragment"
         android:name="com.example.collectorstrackingapp.CategoryManagementFragment"
         android:label="Manage Categories"
-        tools:layout="@layout/fragment_category_management" />
+        tools:layout="@layout/fragment_category_management">
+        <action
+            android:id="@+id/action_CategoryManagementFragment_to_CategoryDetailsFragment"
+            app:destination="@id/CategoryDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/CategoryDetailsFragment"
+        android:name="com.example.collectorstrackingapp.CategoryDetailsFragment"
+        android:label="Category Items"
+        tools:layout="@layout/fragment_category_details">
+        <argument
+            android:name="categoryName"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/SecondFragment"

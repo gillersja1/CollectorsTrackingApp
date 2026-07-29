@@ -1,20 +1,23 @@
 package com.example.collectorstrackingapp
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.navigation.fragment.findNavController
-import com.example.collectorstrackingapp.databinding.FragmentSecondBinding
-
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
+import coil.load
+import com.example.collectorstrackingapp.databinding.FragmentSecondBinding
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
 import com.example.collectorstrackingapp.viewmodel.CollectibleViewModel
+import java.io.File
+import java.io.FileOutputStream
 
 /**
  * A simple [Fragment] subclass as the second destination in the navigation.
@@ -29,6 +32,14 @@ class SecondFragment : Fragment() {
     private var currentCollectible: Collectible? = null
     
     private var existingCategories: List<Category> = emptyList()
+    private var selectedImageUri: String? = null
+
+    private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let {
+            selectedImageUri = it.toString()
+            binding.imageViewPreview.load(it)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -50,6 +61,10 @@ class SecondFragment : Fragment() {
 
         if (currentCollectibleId != -1) {
             setupEditMode()
+        }
+
+        binding.buttonSelectImage.setOnClickListener {
+            selectImageLauncher.launch("image/*")
         }
 
         binding.buttonSave.setOnClickListener {
@@ -92,6 +107,10 @@ class SecondFragment : Fragment() {
                 binding.editTextName.setText(it.name)
                 binding.autoCompleteCategory.setText(it.category, false)
                 binding.editTextDescription.setText(it.description)
+                selectedImageUri = it.imagePath
+                if (it.imagePath != null) {
+                    binding.imageViewPreview.load(it.imagePath)
+                }
             }
         }
     }
@@ -111,22 +130,53 @@ class SecondFragment : Fragment() {
             collectibleViewModel.insertCategory(Category(name = category))
         }
 
+        val finalImagePath = selectedImageUri?.let { uriString ->
+            if (uriString.startsWith("content://")) {
+                saveImageToInternalStorage(android.net.Uri.parse(uriString))
+            } else {
+                uriString
+            }
+        }
+
         val collectible = if (currentCollectibleId != -1) {
             Collectible(
                 id = currentCollectibleId,
                 name = name,
                 category = category,
                 description = description,
+                imagePath = finalImagePath,
                 timestamp = currentCollectible?.timestamp ?: System.currentTimeMillis()
             )
         } else {
-            Collectible(name = name, category = category, description = description)
+            Collectible(
+                name = name, 
+                category = category, 
+                description = description,
+                imagePath = finalImagePath
+            )
         }
         
         collectibleViewModel.insert(collectible)
         
         Toast.makeText(context, getString(R.string.msg_saved), Toast.LENGTH_SHORT).show()
         findNavController().navigateUp()
+    }
+
+    private fun saveImageToInternalStorage(uri: android.net.Uri): String? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri)
+            val file = File(requireContext().filesDir, "collectible_${System.currentTimeMillis()}.jpg")
+            val outputStream = FileOutputStream(file)
+            inputStream?.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+            file.absolutePath
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     private fun deleteCollectible() {

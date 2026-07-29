@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
 import com.example.collectorstrackingapp.databinding.ItemCollectibleBinding
 import com.example.collectorstrackingapp.model.Collectible
 
@@ -28,6 +29,16 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
             binding.textViewName.text = collectible.name
             binding.textViewCategory.text = collectible.category
             binding.textViewDescription.text = collectible.description
+
+            if (collectible.imagePath != null) {
+                binding.imageViewCollectible.load(collectible.imagePath) {
+                    crossfade(true)
+                    placeholder(android.R.drawable.ic_menu_gallery)
+                    error(android.R.drawable.ic_menu_report_image)
+                }
+            } else {
+                binding.imageViewCollectible.setImageResource(android.R.drawable.ic_menu_gallery)
+            }
         }
 
         companion object {

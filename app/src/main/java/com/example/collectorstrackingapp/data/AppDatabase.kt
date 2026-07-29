@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 /**
  * The Room database for this app.
  */
-@Database(entities = [Collectible::class, Category::class], version = 2, exportSchema = false)
+@Database(entities = [Collectible::class, Category::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun collectibleDao(): CollectibleDao

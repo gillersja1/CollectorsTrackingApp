@@ -1,18 +1,15 @@
-# Task: Implement Search and Filter
+# Task: Implement Collectible Images
 
-- [x] **Step 1: Data Layer Enhancements**
-    - [x] Add `searchCollectibles` to `CollectibleDao`
-    - [x] Update `CollectibleRepository`
-    - [x] Update `CollectibleViewModel`
-- [x] **Step 2: UI Layouts**
-    - [x] Create `fragment_search.xml`
-- [ ] **Step 3: UI Implementation**
-    - [x] **Step 3: UI Implementation**
-    - [x] Create `SearchFragment.kt`
-- [x] **Step 4: Navigation & Menu Integration**
-    - [x] Update `nav_graph.xml` with `SearchFragment` destination
-    - [x] Update `menu_main.xml` with search icon
-    - [x] Update `MainActivity.kt` to handle search click
-- [ ] **Step 5: Verification**
-    - [ ] Build and Run
-    - [ ] Manual test: Search by name and category
+- [x] **Step 1: Setup & Data Layer**
+    - [x] Add Coil dependency to `build.gradle.kts`
+    - [x] Add `imagePath` to `Collectible` entity
+    - [x] Increment `AppDatabase` version
+- [x] **Step 2: UI Components (Layouts)**
+    - [x] Update `item_collectible.xml` to show images
+    - [x] Update `fragment_second.xml` with image picker UI
+- [x] **Step 3: Logic Implementation**
+    - [x] Update `CollectibleAdapter.kt` to load images with Coil
+    - [x] Update `SecondFragment.kt` with image picking and preview logic
+- [x] **Step 4: Verification**
+    - [x] Build and Run
+    - [ ] Manual test: Add item with image, verify list and category views
