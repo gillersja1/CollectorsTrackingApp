@@ -54,10 +54,10 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null)
-                .setAnchorView(R.id.fab).show()
+        binding.fab.setOnClickListener {
+            if (navController.currentDestination?.id == R.id.FirstFragment) {
+                navController.navigate(R.id.action_FirstFragment_to_SecondFragment)
+            }
         }
     }
 
@@ -79,8 +79,19 @@ class MainActivity : AppCompatActivity() {
      * @return boolean Return false to allow normal menu processing to proceed, true to consume it here.
      */
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+        val navController = navHostFragment.navController
+        
         return when (item.itemId) {
-            R.id.action_settings -> true
+            R.id.action_search -> {
+                navController.navigate(R.id.action_FirstFragment_to_SearchFragment)
+                true
+            }
+            R.id.action_settings -> {
+                navController.navigate(R.id.action_FirstFragment_to_CategoryManagementFragment)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

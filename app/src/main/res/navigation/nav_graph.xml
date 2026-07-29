@@ -8,21 +8,47 @@
     <fragment
         android:id="@+id/FirstFragment"
         android:name="com.example.collectorstrackingapp.FirstFragment"
-        android:label="@string/first_fragment_label"
+        android:label="My Collection"
         tools:layout="@layout/fragment_first">
 
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+
+        <action
+            android:id="@+id/action_FirstFragment_to_CategoryManagementFragment"
+            app:destination="@id/CategoryManagementFragment" />
+
+        <action
+            android:id="@+id/action_FirstFragment_to_SearchFragment"
+            app:destination="@id/SearchFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/SearchFragment"
+        android:name="com.example.collectorstrackingapp.SearchFragment"
+        android:label="Search Collectibles"
+        tools:layout="@layout/fragment_search" />
+
+    <fragment
+        android:id="@+id/CategoryManagementFragment"
+        android:name="com.example.collectorstrackingapp.CategoryManagementFragment"
+        android:label="Manage Categories"
+        tools:layout="@layout/fragment_category_management" />
+
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.example.collectorstrackingapp.SecondFragment"
-        android:label="@string/second_fragment_label"
+        android:label="Add Collectible"
         tools:layout="@layout/fragment_second">
 
         <action
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
+
+        <argument
+            android:name="collectibleId"
+            app:argType="integer"
+            android:defaultValue="-1" />
     </fragment>
 </navigation>

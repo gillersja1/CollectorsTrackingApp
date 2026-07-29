@@ -8,6 +8,17 @@
     <string name="previous">Previous</string>
     <string name="welcome_message">Welcome to the Collector\'s App!</string>
     <string name="second_page_message">You made it to the second page!</string>
+    <string name="edit_collectible_title">Edit Collectible</string>
+    <string name="add_collectible_title">Add Collectible</string>
 
-    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
+    <string name="category_label">Category</string>
+    <string name="category_hint">Select or type category</string>
+    <string name="name_label">Name</string>
+    <string name="description_label">Description</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="back_to_collection">Back to My Collection</string>
+    <string name="error_name_category">Please enter a name and category</string>
+    <string name="msg_saved">Collectible saved!</string>
+    <string name="msg_deleted">Collectible deleted!</string>
 </resources>

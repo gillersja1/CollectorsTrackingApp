@@ -1,0 +1,17 @@
+package com.example.collectorstrackingapp.model
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+/**
+ * Represents a collectible item in the tracking application.
+ */
+@Entity(tableName = "collectibles")
+data class Collectible(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+    val name: String,
+    val category: String,
+    val description: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
