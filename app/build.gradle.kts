@@ -58,6 +58,9 @@ dependencies {
     // Image Loading
     implementation(libs.coil)
 
+    // Code Scanner
+    implementation(libs.play.services.code.scanner)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# IDE Planning & Artifacts
+.artifacts/
+*.artifact.md
+.idea/planningMode.xml
+

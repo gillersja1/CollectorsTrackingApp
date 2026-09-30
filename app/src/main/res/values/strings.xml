@@ -21,4 +21,8 @@
     <string name="error_name_category">Please enter a name and category</string>
     <string name="msg_saved">Collectible saved!</string>
     <string name="msg_deleted">Collectible deleted!</string>
+    <string name="scan_barcode">Scan Barcode / QR Code</string>
+    <string name="scan_autofilled">Auto-filled from scanned code</string>
+    <string name="scan_failed">Scanning failed: %s</string>
+    <string name="scan_canceled">Scan canceled</string>
 </resources>

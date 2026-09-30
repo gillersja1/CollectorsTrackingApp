@@ -16,6 +16,10 @@ import com.example.collectorstrackingapp.databinding.FragmentSecondBinding
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
 import com.example.collectorstrackingapp.viewmodel.CollectibleViewModel
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
 
@@ -65,6 +69,10 @@ class SecondFragment : Fragment() {
 
         binding.buttonSelectImage.setOnClickListener {
             selectImageLauncher.launch("image/*")
+        }
+
+        binding.buttonScanCode.setOnClickListener {
+            startBarcodeScanner()
         }
 
         binding.buttonSave.setOnClickListener {
@@ -185,6 +193,90 @@ class SecondFragment : Fragment() {
             Toast.makeText(context, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
             findNavController().navigateUp()
         }
+    }
+
+    private fun startBarcodeScanner() {
+        val options = GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+            .build()
+        val scanner = GmsBarcodeScanning.getClient(requireContext(), options)
+
+        scanner.startScan()
+            .addOnSuccessListener { barcode ->
+                val rawValue = barcode.rawValue
+                if (!rawValue.isNullOrEmpty()) {
+                    handleScannedData(rawValue)
+                }
+            }
+            .addOnCanceledListener {
+                Toast.makeText(context, getString(R.string.scan_canceled), Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(context, getString(R.string.scan_failed, e.localizedMessage ?: e.message), Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun handleScannedData(rawText: String) {
+        // 1. Try JSON parsing (e.g. {"name": "...", "category": "...", "description": "..."})
+        try {
+            val json = JSONObject(rawText)
+            val name = json.optString("name").takeIf { it.isNotBlank() }
+                ?: json.optString("title").takeIf { it.isNotBlank() }
+            val category = json.optString("category").takeIf { it.isNotBlank() }
+            val description = json.optString("description").takeIf { it.isNotBlank() }
+                ?: json.optString("desc").takeIf { it.isNotBlank() }
+
+            if (name != null || category != null || description != null) {
+                name?.let { binding.editTextName.setText(it) }
+                category?.let { binding.autoCompleteCategory.setText(it, false) }
+                description?.let { binding.editTextDescription.setText(it) }
+                Toast.makeText(context, getString(R.string.scan_autofilled), Toast.LENGTH_SHORT).show()
+                return
+            }
+        } catch (_: Exception) {
+            // Not a JSON object
+        }
+
+        // 2. Try Key-Value line parsing (e.g. "Name: ... \n Category: ... \n Description: ...")
+        val lines = rawText.lines()
+        var parsedName: String? = null
+        var parsedCategory: String? = null
+        var parsedDescription: String? = null
+
+        for (line in lines) {
+            val parts = line.split(":", limit = 2)
+            if (parts.size == 2) {
+                val key = parts[0].trim().lowercase()
+                val value = parts[1].trim()
+                when (key) {
+                    "name", "title", "item" -> parsedName = value
+                    "category", "cat", "type" -> parsedCategory = value
+                    "description", "desc", "notes" -> parsedDescription = value
+                }
+            }
+        }
+
+        if (parsedName != null || parsedCategory != null || parsedDescription != null) {
+            parsedName?.let { binding.editTextName.setText(it) }
+            parsedCategory?.let { binding.autoCompleteCategory.setText(it, false) }
+            parsedDescription?.let { binding.editTextDescription.setText(it) }
+            Toast.makeText(context, getString(R.string.scan_autofilled), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 3. Fallback: Set barcode string as Name if empty, and append to Description
+        if (binding.editTextName.text.isNullOrBlank()) {
+            binding.editTextName.setText(rawText)
+        }
+
+        val currentDesc = binding.editTextDescription.text.toString()
+        if (currentDesc.isBlank()) {
+            binding.editTextDescription.setText("Scanned Code: $rawText")
+        } else if (!currentDesc.contains(rawText)) {
+            binding.editTextDescription.setText("$currentDesc\nScanned Code: $rawText")
+        }
+
+        Toast.makeText(context, getString(R.string.scan_autofilled), Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
