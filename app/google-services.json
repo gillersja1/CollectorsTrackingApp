@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "328962677708",
+    "project_id": "collectorsapp-90a46",
+    "storage_bucket": "collectorsapp-90a46.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:328962677708:android:adc79b448f4abcd2945b69",
+        "android_client_info": {
+          "package_name": "com.example.collectorstrackingapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvnXnXQBrSDPgZdXVjoIJg9-Xlpz6IlUA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
