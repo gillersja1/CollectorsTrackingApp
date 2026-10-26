@@ -92,6 +92,12 @@ class MainActivity : AppCompatActivity() {
                 navController.navigate(R.id.action_FirstFragment_to_CategoryManagementFragment)
                 true
             }
+            R.id.action_logout -> {
+                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
+                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+                navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
