@@ -13,6 +13,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import com.example.collectorstrackingapp.databinding.ActivityMainBinding
 
 /**
@@ -92,9 +93,20 @@ class MainActivity : AppCompatActivity() {
                 navController.navigate(R.id.action_FirstFragment_to_CategoryManagementFragment)
                 true
             }
+            R.id.action_delete_account -> {
+                val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                user?.delete()?.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                    } else {
+                        Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                    }
+                }
+                true
+            }
             R.id.action_logout -> {
-                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
-                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
                 navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
                 true
             }
