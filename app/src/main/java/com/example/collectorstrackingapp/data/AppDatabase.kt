@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
+import com.example.collectorstrackingapp.model.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,11 +15,12 @@ import kotlinx.coroutines.launch
 /**
  * The Room database for this app.
  */
-@Database(entities = [Collectible::class, Category::class], version = 3, exportSchema = false)
+@Database(entities = [Collectible::class, Category::class, User::class], version = 4, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun collectibleDao(): CollectibleDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun userDao(): UserDao
 
     companion object {
         @Volatile
