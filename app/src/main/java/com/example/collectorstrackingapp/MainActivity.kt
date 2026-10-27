@@ -14,6 +14,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.collectorstrackingapp.databinding.ActivityMainBinding
 
 /**
@@ -35,6 +36,8 @@ class MainActivity : AppCompatActivity() {
      * recently supplied in [onSaveInstanceState]. **Note: Otherwise it is null.**
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
+        setTheme(R.style.Theme_CollectorsTrackingApp)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
