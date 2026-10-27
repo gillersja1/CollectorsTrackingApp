@@ -109,7 +109,6 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
-        setTheme(R.style.Theme_CollectorsTrackingApp)
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
