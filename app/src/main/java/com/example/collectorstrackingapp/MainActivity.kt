@@ -14,8 +14,16 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.collectorstrackingapp.databinding.ActivityMainBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * The main activity of the Collectors Tracking application.
@@ -26,6 +34,70 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+
+    private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        uri?.let { exportUri ->
+            try {
+                val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                CoroutineScope(Dispatchers.IO).launch {
+                    val list = db.collectibleDao().getAllCollectibles().first()
+                    val jsonArray = JSONArray()
+                    for (item in list) {
+                        val obj = JSONObject().apply {
+                            put("id", item.id)
+                            put("name", item.name)
+                            put("category", item.category)
+                            put("description", item.description)
+                            put("imagePath", item.imagePath ?: "")
+                            put("timestamp", item.timestamp)
+                        }
+                        jsonArray.put(obj)
+                    }
+                    contentResolver.openOutputStream(exportUri)?.use { outputStream ->
+                        outputStream.write(jsonArray.toString(4).toByteArray())
+                    }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "Collection exported successfully!", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { importUri ->
+            try {
+                contentResolver.openInputStream(importUri)?.use { inputStream ->
+                    val jsonString = inputStream.bufferedReader().use { it.readText() }
+                    val jsonArray = JSONArray(jsonString)
+                    val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                    val syncManager = com.example.collectorstrackingapp.data.FirebaseSyncManager(this)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        for (i in 0 until jsonArray.length()) {
+                            val obj = jsonArray.getJSONObject(i)
+                            val item = com.example.collectorstrackingapp.model.Collectible(
+                                id = obj.optInt("id", 0),
+                                name = obj.getString("name"),
+                                category = obj.getString("category"),
+                                description = obj.getString("description"),
+                                imagePath = obj.optString("imagePath").takeIf { !it.isNullOrEmpty() },
+                                timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                            )
+                            db.collectibleDao().insert(item)
+                            syncManager.syncCollectibleInsert(item)
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(this@MainActivity, "Collection imported successfully!", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     /**
      * Initializes the activity, sets up edge-to-edge display, inflates the layout,
@@ -94,6 +166,14 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_settings -> {
                 navController.navigate(R.id.action_FirstFragment_to_CategoryManagementFragment)
+                true
+            }
+            R.id.action_export -> {
+                exportLauncher.launch("collectible_backup_${System.currentTimeMillis()}.json")
+                true
+            }
+            R.id.action_import -> {
+                importLauncher.launch(arrayOf("application/json", "*/*"))
                 true
             }
             R.id.action_delete_account -> {
