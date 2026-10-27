@@ -90,6 +90,44 @@
                 android:minLines="3" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutEstimatedValue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Estimated Value ($)"
+            app:layout_constraintTop_toBottomOf="@id/layoutDescription">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextEstimatedValue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutTags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Tags (comma separated, e.g. rare, signed)"
+            app:layout_constraintTop_toBottomOf="@id/layoutEstimatedValue">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchWishlist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Add to Wishlist (Want List)"
+            app:layout_constraintTop_toBottomOf="@id/layoutTags" />
+
         <Button
             android:id="@+id/button_save"
             android:layout_width="0dp"
@@ -99,7 +137,7 @@
             app:layout_constraintEnd_toStartOf="@+id/button_delete"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layoutDescription" />
+            app:layout_constraintTop_toBottomOf="@id/switchWishlist" />
 
         <Button
             android:id="@+id/button_delete"

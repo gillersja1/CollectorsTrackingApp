@@ -19,7 +19,7 @@ interface CollectibleDao {
     @Query("SELECT * FROM collectibles WHERE id = :id")
     fun getCollectible(id: Int): Flow<Collectible>
 
-    @Query("SELECT * FROM collectibles WHERE (:query IS NULL OR name LIKE '%' || :query || '%') AND (:category IS NULL OR :category = 'All' OR category = :category) ORDER BY timestamp DESC")
+    @Query("SELECT * FROM collectibles WHERE (:query IS NULL OR name LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%') AND (:category IS NULL OR :category = 'All' OR category = :category) ORDER BY timestamp DESC")
     fun searchCollectibles(query: String?, category: String?): Flow<List<Collectible>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

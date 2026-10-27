@@ -1,6 +1,7 @@
 package com.example.collectorstrackingapp
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -30,6 +31,19 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
             binding.textViewCategory.text = collectible.category
             binding.textViewDescription.text = collectible.description
 
+            if (collectible.estimatedValue > 0) {
+                binding.textViewValue.text = "Value: $${String.format("%.2f", collectible.estimatedValue)}"
+                binding.textViewValue.visibility = View.VISIBLE
+            } else {
+                binding.textViewValue.visibility = View.GONE
+            }
+
+            if (collectible.isWishlist) {
+                binding.textViewWishlist.visibility = View.VISIBLE
+            } else {
+                binding.textViewWishlist.visibility = View.GONE
+            }
+
             if (collectible.imagePath != null) {
                 binding.imageViewCollectible.load(collectible.imagePath) {
                     crossfade(true)
@@ -57,7 +71,9 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
         override fun areContentsTheSame(oldItem: Collectible, newItem: Collectible): Boolean {
             return oldItem.name == newItem.name &&
                     oldItem.category == newItem.category &&
-                    oldItem.description == newItem.description
+                    oldItem.description == newItem.description &&
+                    oldItem.estimatedValue == newItem.estimatedValue &&
+                    oldItem.isWishlist == newItem.isWishlist
         }
     }
 }

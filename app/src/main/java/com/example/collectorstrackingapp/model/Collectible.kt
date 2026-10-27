@@ -14,5 +14,8 @@ data class Collectible(
     val category: String,
     val description: String,
     val imagePath: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isWishlist: Boolean = false,
+    val estimatedValue: Double = 0.0,
+    val tags: String = ""
 )

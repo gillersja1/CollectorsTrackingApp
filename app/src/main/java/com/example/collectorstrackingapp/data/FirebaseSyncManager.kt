@@ -57,7 +57,10 @@ class FirebaseSyncManager(private val context: Context) {
             "category" to collectible.category,
             "description" to collectible.description,
             "imagePath" to (collectible.imagePath ?: ""),
-            "timestamp" to collectible.timestamp
+            "timestamp" to collectible.timestamp,
+            "isWishlist" to collectible.isWishlist,
+            "estimatedValue" to collectible.estimatedValue,
+            "tags" to collectible.tags
         )
         ref.document(docId).set(data)
     }
@@ -93,7 +96,10 @@ class FirebaseSyncManager(private val context: Context) {
                     val description = doc.getString("description") ?: ""
                     val imagePath = doc.getString("imagePath")
                     val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
-                    Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp)
+                    val isWishlist = doc.getBoolean("isWishlist") ?: false
+                    val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
+                    val tags = doc.getString("tags") ?: ""
+                    Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
                 }
                 onCollectiblesChanged(list)
             }

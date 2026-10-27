@@ -115,6 +115,9 @@ class SecondFragment : Fragment() {
                 binding.editTextName.setText(it.name)
                 binding.autoCompleteCategory.setText(it.category, false)
                 binding.editTextDescription.setText(it.description)
+                binding.editTextEstimatedValue.setText(if (it.estimatedValue > 0) it.estimatedValue.toString() else "")
+                binding.editTextTags.setText(it.tags)
+                binding.switchWishlist.isChecked = it.isWishlist
                 selectedImageUri = it.imagePath
                 if (it.imagePath != null) {
                     binding.imageViewPreview.load(it.imagePath)
@@ -127,6 +130,9 @@ class SecondFragment : Fragment() {
         val name = binding.editTextName.text.toString()
         val category = binding.autoCompleteCategory.text.toString()
         val description = binding.editTextDescription.text.toString()
+        val estimatedValue = binding.editTextEstimatedValue.text.toString().toDoubleOrNull() ?: 0.0
+        val tags = binding.editTextTags.text.toString().trim()
+        val isWishlist = binding.switchWishlist.isChecked
 
         if (name.isBlank() || category.isBlank()) {
             Toast.makeText(context, getString(R.string.error_name_category), Toast.LENGTH_SHORT).show()
@@ -153,14 +159,20 @@ class SecondFragment : Fragment() {
                 category = category,
                 description = description,
                 imagePath = finalImagePath,
-                timestamp = currentCollectible?.timestamp ?: System.currentTimeMillis()
+                timestamp = currentCollectible?.timestamp ?: System.currentTimeMillis(),
+                isWishlist = isWishlist,
+                estimatedValue = estimatedValue,
+                tags = tags
             )
         } else {
             Collectible(
                 name = name, 
                 category = category, 
                 description = description,
-                imagePath = finalImagePath
+                imagePath = finalImagePath,
+                isWishlist = isWishlist,
+                estimatedValue = estimatedValue,
+                tags = tags
             )
         }
         
