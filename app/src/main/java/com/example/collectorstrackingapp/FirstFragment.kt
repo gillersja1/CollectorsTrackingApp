@@ -12,6 +12,7 @@ import com.example.collectorstrackingapp.databinding.FragmentFirstBinding
 import androidx.fragment.app.viewModels
 import com.example.collectorstrackingapp.model.Collectible
 import com.example.collectorstrackingapp.viewmodel.CollectibleViewModel
+import java.util.Locale
 
 /**
  * Fragment as the default destination in navigation displaying collection overview, stats, filters, sorting, and collectibles list.
@@ -90,7 +91,8 @@ class FirstFragment : Fragment() {
 
     private fun updateStats(collectibles: List<Collectible>) {
         val total = collectibles.size
-        binding.textViewTotalItems.text = "Total Items: $total"
+        val portfolioValue = collectibles.sumOf { it.estimatedValue }
+        binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", total, portfolioValue)
 
         val breakdown = collectibles.groupingBy { it.category }.eachCount()
         val breakdownText = if (breakdown.isEmpty()) {
