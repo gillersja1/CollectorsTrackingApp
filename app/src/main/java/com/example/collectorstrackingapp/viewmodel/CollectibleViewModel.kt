@@ -31,20 +31,18 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         allCollectibles = repository.allCollectibles.asLiveData()
         allCategories = repository.allCategories.asLiveData()
 
-        // Fetch remote data and sync to local DB
-        viewModelScope.launch(Dispatchers.IO) {
-            syncManager.fetchRemoteCollectibles { remoteList ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    for (item in remoteList) {
-                        repository.insert(item)
-                    }
+        // Listen to remote changes in real-time using addSnapshotListener
+        syncManager.listenToCollectibles { remoteList ->
+            viewModelScope.launch(Dispatchers.IO) {
+                for (item in remoteList) {
+                    repository.insert(item)
                 }
             }
-            syncManager.fetchRemoteCategories { remoteCategories ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    for (cat in remoteCategories) {
-                        repository.insertCategory(cat)
-                    }
+        }
+        syncManager.listenToCategories { remoteCategories ->
+            viewModelScope.launch(Dispatchers.IO) {
+                for (cat in remoteCategories) {
+                    repository.insertCategory(cat)
                 }
             }
         }
@@ -60,8 +58,8 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
 
     fun insert(collectible: Collectible) = viewModelScope.launch(Dispatchers.IO) {
         var finalCollectible = collectible
-        if (!collectible.imagePath.isNullOrEmpty() && (collectible.imagePath!!.startsWith("content://") || collectible.imagePath!!.startsWith("file://"))) {
-            val cloudUrl = syncManager.uploadImageAndGetUrl(collectible.imagePath!!)
+        if (!collectible.imagePath.isNullOrEmpty() && (collectible.imagePath.startsWith("content://") || collectible.imagePath.startsWith("file://"))) {
+            val cloudUrl = syncManager.uploadImageAndGetUrl(collectible.imagePath)
             if (cloudUrl != null) {
                 finalCollectible = collectible.copy(imagePath = cloudUrl)
             }
