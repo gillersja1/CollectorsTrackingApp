@@ -197,7 +197,16 @@ class SecondFragment : Fragment() {
 
     private fun startBarcodeScanner() {
         val options = GmsBarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+            .setBarcodeFormats(
+                Barcode.FORMAT_QR_CODE,
+                Barcode.FORMAT_UPC_A,
+                Barcode.FORMAT_UPC_E,
+                Barcode.FORMAT_EAN_13,
+                Barcode.FORMAT_EAN_8,
+                Barcode.FORMAT_CODE_128,
+                Barcode.FORMAT_DATA_MATRIX
+            )
+            .enableAutoZoom()
             .build()
         val scanner = GmsBarcodeScanning.getClient(requireContext(), options)
 
@@ -206,13 +215,16 @@ class SecondFragment : Fragment() {
                 val rawValue = barcode.rawValue
                 if (!rawValue.isNullOrEmpty()) {
                     handleScannedData(rawValue)
+                } else {
+                    Toast.makeText(context, "Scanned code was empty", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnCanceledListener {
                 Toast.makeText(context, getString(R.string.scan_canceled), Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
-                Toast.makeText(context, getString(R.string.scan_failed, e.localizedMessage ?: e.message), Toast.LENGTH_SHORT).show()
+                val errorMsg = e.localizedMessage ?: e.message ?: "Unknown error"
+                Toast.makeText(context, "Scan failed: $errorMsg. Ensure Google Play Services is up to date.", Toast.LENGTH_LONG).show()
             }
     }
 
