@@ -12,7 +12,7 @@ import com.example.collectorstrackingapp.model.User
 /**
  * The Room database for this app.
  */
-@Database(entities = [Collectible::class, Category::class, User::class], version = 4, exportSchema = false)
+@Database(entities = [Collectible::class, Category::class, User::class], version = 5, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun collectibleDao(): CollectibleDao
