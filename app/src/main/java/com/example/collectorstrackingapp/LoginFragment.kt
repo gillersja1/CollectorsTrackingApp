@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.example.collectorstrackingapp.databinding.FragmentLoginBinding
@@ -26,6 +27,21 @@ class LoginFragment : Fragment() {
     ): View {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Hide action bar/toolbar and FAB on login screen
+        (activity as? AppCompatActivity)?.supportActionBar?.hide()
+        (activity as? MainActivity)?.findViewById<View>(R.id.fab)?.visibility = View.GONE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Restore action bar and FAB when leaving login screen
+        (activity as? AppCompatActivity)?.supportActionBar?.show()
+        (activity as? MainActivity)?.findViewById<View>(R.id.fab)?.visibility = View.VISIBLE
+        _binding = null
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -119,10 +135,5 @@ class LoginFragment : Fragment() {
                     }
                 }
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }
