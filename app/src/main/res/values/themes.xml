@@ -7,8 +7,7 @@
 
     <style name="Theme.CollectorsTrackingApp" parent="Base.Theme.CollectorsTrackingApp" />
 
-    <style name="Theme.CollectorsTrackingApp.Launching" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">?attr/colorSurface</item>
-        <item name="postSplashScreenTheme">@style/Theme.CollectorsTrackingApp</item>
+    <style name="Theme.CollectorsTrackingApp.Launching" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorSurface</item>
     </style>
 </resources>

@@ -15,7 +15,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.collectorstrackingapp.databinding.ActivityMainBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +72,6 @@ class MainActivity : AppCompatActivity() {
                     val jsonString = inputStream.bufferedReader().use { it.readText() }
                     val jsonArray = JSONArray(jsonString)
                     val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
-                    val syncManager = com.example.collectorstrackingapp.data.FirebaseSyncManager(this)
                     CoroutineScope(Dispatchers.IO).launch {
                         for (i in 0 until jsonArray.length()) {
                             val obj = jsonArray.getJSONObject(i)
@@ -86,7 +84,6 @@ class MainActivity : AppCompatActivity() {
                                 timestamp = obj.optLong("timestamp", System.currentTimeMillis())
                             )
                             db.collectibleDao().insert(item)
-                            syncManager.syncCollectibleInsert(item)
                         }
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "Collection imported successfully!", Toast.LENGTH_LONG).show()
@@ -109,7 +106,6 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
-            installSplashScreen()
             super.onCreate(savedInstanceState)
             enableEdgeToEdge()
 
@@ -186,19 +182,14 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_delete_account -> {
-                val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                user?.delete()?.addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
-                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
-                    } else {
-                        Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
-                    }
-                }
+                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
+                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+                navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
                 true
             }
             R.id.action_logout -> {
-                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
+                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
                 navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
                 true
             }
