@@ -30,7 +30,7 @@
                     android:id="@+id/textViewStatsTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Collection Overview"
+                    android:text="@string/collection_overview"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="6dp" />
@@ -47,7 +47,7 @@
                     android:id="@+id/textViewCategoryBreakdown"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Categories: None"
+                    android:text="@string/categories_none"
                     android:textSize="14sp"
                     android:textColor="?attr/colorSecondary" />
 
