@@ -22,12 +22,18 @@ object CollectionLogic {
     const val SORT_OLDEST = "Oldest"
     const val SORT_NAME = "Name (A-Z)"
 
-    fun summarize(collectibles: List<Collectible>): CollectionSummary =
-        CollectionSummary(
-            totalItems = collectibles.size,
-            portfolioValue = collectibles.sumOf { it.estimatedValue },
-            categoryBreakdown = collectibles.groupingBy { it.category }.eachCount()
+    /**
+     * Summarizes the items the user owns. Wishlist items aren't owned yet, so
+     * they're excluded from the total, the portfolio value and the breakdown.
+     */
+    fun summarize(collectibles: List<Collectible>): CollectionSummary {
+        val owned = collectibles.filter { !it.isWishlist }
+        return CollectionSummary(
+            totalItems = owned.size,
+            portfolioValue = owned.sumOf { it.estimatedValue },
+            categoryBreakdown = owned.groupingBy { it.category }.eachCount()
         )
+    }
 
     /**
      * Filters by category (case-insensitive; "All" keeps everything) and sorts

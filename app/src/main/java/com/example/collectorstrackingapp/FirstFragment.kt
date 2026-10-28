@@ -111,12 +111,10 @@ class FirstFragment : Fragment() {
 
     private fun updateStats(collectibles: List<Collectible>) {
         try {
-            val ownedItems = collectibles.filter { !it.isWishlist }
-            val total = ownedItems.size
-            val portfolioValue = ownedItems.sumOf { it.estimatedValue }
-            binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", total, portfolioValue)
+            val summary = CollectionLogic.summarize(collectibles)
+            binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", summary.totalItems, summary.portfolioValue)
 
-            val breakdown = ownedItems.groupingBy { it.category }.eachCount()
+            val breakdown = summary.categoryBreakdown
             val breakdownText = if (breakdown.isEmpty()) {
                 getString(R.string.categories_none)
             } else {
@@ -130,17 +128,7 @@ class FirstFragment : Fragment() {
 
     private fun filterAndSortList(adapter: CollectibleAdapter) {
         try {
-            var filtered = if (selectedCategory == "All") {
-                allItems
-            } else {
-                allItems.filter { it.category.equals(selectedCategory, ignoreCase = true) }
-            }
-
-            filtered = when (selectedSortOrder) {
-                "Oldest" -> filtered.sortedBy { it.timestamp }
-                "Name (A-Z)" -> filtered.sortedBy { it.name.lowercase() }
-                else -> filtered.sortedByDescending { it.timestamp } // Newest
-            }
+            val filtered = CollectionLogic.filterAndSort(allItems, selectedCategory, selectedSortOrder)
 
             adapter.submitList(filtered)
         } catch (e: Exception) {

@@ -170,6 +170,16 @@ class CollectibleRepositoryTest {
     }
 
     @Test
+    fun insertCategory_withDuplicateName_isIgnored() = runBlocking {
+        // Regression test: the unique index on name makes IGNORE apply to
+        // duplicate names, not just duplicate IDs.
+        repository.insertCategory(Category(name = "FunkoPop"))
+        repository.insertCategory(Category(name = "FunkoPop"))
+
+        assertEquals(listOf("FunkoPop"), repository.allCategories.first().map { it.name })
+    }
+
+    @Test
     fun deleteCategory_removesIt() = runBlocking {
         val comics = Category(id = 3, name = "Comics")
         repository.insertCategory(comics)
