@@ -33,7 +33,7 @@ class LoginFragment : Fragment() {
 
         auth = try {
             FirebaseAuth.getInstance()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 
