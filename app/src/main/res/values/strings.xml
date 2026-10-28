@@ -25,4 +25,18 @@
     <string name="scan_autofilled">Auto-filled from scanned code</string>
     <string name="scan_failed">Scanning failed: %s</string>
     <string name="scan_canceled">Scan canceled</string>
+
+    <string name="collection_overview">Collection Overview</string>
+    <string name="total_items_placeholder">Total Items: %d</string>
+    <string name="categories_none">Categories: None</string>
+    <string name="export_json">Export Collection (JSON)</string>
+    <string name="import_json">Import Collection (JSON)</string>
+    <string name="delete_account">Delete Account</string>
+    <string name="logout">Logout</string>
+    <string name="wishlist_badge">★ Wishlist</string>
+    <string name="estimated_value_hint">Estimated Value ($)</string>
+    <string name="tags_hint">Tags (comma separated, e.g. rare, signed)</string>
+    <string name="add_to_wishlist">Add to Wishlist (Want List)</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="choose_image">Choose Image (Optional)</string>
 </resources>
