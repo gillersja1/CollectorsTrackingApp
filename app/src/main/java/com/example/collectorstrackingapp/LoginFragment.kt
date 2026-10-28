@@ -33,9 +33,15 @@ class LoginFragment : Fragment() {
 
         auth = FirebaseAuth.getInstance()
 
-        // Check if already logged in
+        // Check if already logged in safely using view.post
         if (auth.currentUser != null) {
-            findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+            view.post {
+                try {
+                    findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
 
         binding.loginButton.setOnClickListener {
@@ -51,7 +57,11 @@ class LoginFragment : Fragment() {
                 .addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Welcome back!", Toast.LENGTH_SHORT).show()
-                        findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+                        try {
+                            findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     } else {
                         Toast.makeText(requireContext(), "Authentication failed: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
@@ -71,7 +81,11 @@ class LoginFragment : Fragment() {
                 .addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show()
-                        findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+                        try {
+                            findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     } else {
                         Toast.makeText(requireContext(), "Registration failed: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
