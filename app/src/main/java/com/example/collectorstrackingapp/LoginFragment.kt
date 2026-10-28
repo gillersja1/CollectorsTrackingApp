@@ -37,17 +37,6 @@ class LoginFragment : Fragment() {
             null
         }
 
-        // Check if already logged in safely using view.post
-        if (auth?.currentUser != null) {
-            view.post {
-                try {
-                    findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
-
         binding.loginButton.setOnClickListener {
             val email = binding.usernameEditText.text.toString().trim()
             val password = binding.passwordEditText.text.toString().trim()
