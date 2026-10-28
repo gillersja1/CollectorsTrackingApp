@@ -31,20 +31,24 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         allCollectibles = repository.allCollectibles.asLiveData()
         allCategories = repository.allCategories.asLiveData()
 
-        // Listen to remote changes in real-time using addSnapshotListener
-        syncManager.listenToCollectibles { remoteList ->
-            viewModelScope.launch(Dispatchers.IO) {
-                for (item in remoteList) {
-                    repository.insert(item)
+        // Listen to remote changes in real-time using addSnapshotListener safely
+        try {
+            syncManager.listenToCollectibles { remoteList ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    for (item in remoteList) {
+                        repository.insert(item)
+                    }
                 }
             }
-        }
-        syncManager.listenToCategories { remoteCategories ->
-            viewModelScope.launch(Dispatchers.IO) {
-                for (cat in remoteCategories) {
-                    repository.insertCategory(cat)
+            syncManager.listenToCategories { remoteCategories ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    for (cat in remoteCategories) {
+                        repository.insertCategory(cat)
+                    }
                 }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -58,28 +62,44 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
 
     fun insert(collectible: Collectible) = viewModelScope.launch(Dispatchers.IO) {
         var finalCollectible = collectible
-        if (!collectible.imagePath.isNullOrEmpty() && (collectible.imagePath.startsWith("content://") || collectible.imagePath.startsWith("file://"))) {
-            val cloudUrl = syncManager.uploadImageAndGetUrl(collectible.imagePath)
-            if (cloudUrl != null) {
-                finalCollectible = collectible.copy(imagePath = cloudUrl)
+        try {
+            if (!collectible.imagePath.isNullOrEmpty() && (collectible.imagePath.startsWith("content://") || collectible.imagePath.startsWith("file://"))) {
+                val cloudUrl = syncManager.uploadImageAndGetUrl(collectible.imagePath)
+                if (cloudUrl != null) {
+                    finalCollectible = collectible.copy(imagePath = cloudUrl)
+                }
             }
+            syncManager.syncCollectibleInsert(finalCollectible)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         repository.insert(finalCollectible)
-        syncManager.syncCollectibleInsert(finalCollectible)
     }
 
     fun delete(collectible: Collectible) = viewModelScope.launch(Dispatchers.IO) {
+        try {
+            syncManager.syncCollectibleDelete(collectible)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         repository.delete(collectible)
-        syncManager.syncCollectibleDelete(collectible)
     }
 
     fun insertCategory(category: Category) = viewModelScope.launch(Dispatchers.IO) {
+        try {
+            syncManager.syncCategoryInsert(category)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         repository.insertCategory(category)
-        syncManager.syncCategoryInsert(category)
     }
 
     fun deleteCategory(category: Category) = viewModelScope.launch(Dispatchers.IO) {
+        try {
+            syncManager.syncCategoryDelete(category)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         repository.deleteCategory(category)
-        syncManager.syncCategoryDelete(category)
     }
 }
