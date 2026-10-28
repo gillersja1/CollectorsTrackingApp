@@ -105,6 +105,22 @@ class MainActivity : AppCompatActivity() {
      * recently supplied in [onSaveInstanceState]. **Note: Otherwise it is null.**
      */
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Global uncaught exception handler to display any crash stack trace directly on the phone screen
+        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
+            throwable.printStackTrace()
+            try {
+                runOnUiThread {
+                    setContentView(android.widget.TextView(this).apply {
+                        text = "CRASH CAUGHT:\n${throwable.message}\n\n${throwable.stackTraceToString()}"
+                        textSize = 12f
+                        setPadding(24, 24, 24, 24)
+                        setTextColor(android.graphics.Color.RED)
+                        setBackgroundColor(android.graphics.Color.WHITE)
+                    })
+                }
+            } catch (_: Exception) {}
+        }
+
         try {
             super.onCreate(savedInstanceState)
             enableEdgeToEdge()
