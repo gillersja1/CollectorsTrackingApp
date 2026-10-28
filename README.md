@@ -45,3 +45,39 @@ An Android application designed to help collectors organize and track their coll
 - `app/src/main/java/com/example/collectorstrackingapp/`: Contains the Kotlin source code.
 - `app/src/main/res/`: Contains layout files, strings, and other resources.
 - `app/build.gradle.kts`: App-level build configuration.
+
+## Testing
+
+Unit tests run on the JVM, so they need no emulator and run on every push
+in CI:
+
+```bash
+./gradlew testDebugUnitTest                                   # run the tests
+./gradlew testDebugUnitTest createDebugUnitTestCoverageReport # + JaCoCo coverage
+```
+
+Reports: `app/build/reports/tests/testDebugUnitTest/index.html` and
+`app/build/reports/coverage/test/debug/index.html`. CI uploads both as the
+`unit-test-reports` artifact.
+
+| Test class | What it covers |
+|---|---|
+| `CollectionLogicTest` | Portfolio summary (totals, value, category breakdown) and the overview's category filter and sort orders |
+| `data/CollectibleRepositoryTest` | The real Room queries against an in-memory SQLite database via [Robolectric](https://robolectric.org/): ordering, replace-on-conflict, delete, name/tag/category search, category rules, user lookup |
+| `CollectibleModelTest` | Entity defaults and construction |
+
+The data layer (`CollectibleRepository` and the Room DAOs) and
+`CollectionLogic` are at **100% line coverage**. The overview's stats and
+sorting used to live inside `FirstFragment`; they were pulled out into
+`CollectionLogic` so they could be tested without a device.
+
+### Defects found and fixed
+
+| Defect | Fix | Regression tests |
+|---|---|---|
+| Search treated `_` and `%` as SQL `LIKE` wildcards, so searching for `_` or `%` returned **every** collectible | User input is escaped (`CollectibleRepository.escapeLikeWildcards`) and the query declares `ESCAPE '\'` | `search_underscoreIsMatchedLiterally`, `search_percentIsMatchedLiterally`, `search_backslashIsMatchedLiterally`. Each was confirmed to fail with the fix reverted |
+
+### Open questions
+
+- **Duplicate categories:** `CategoryDao.insert` uses `OnConflictStrategy.IGNORE`, but `name` has no unique index, so IGNORE only applies to ID clashes and the same category name can be added twice.
+- **Wishlist in portfolio value:** wishlist items (not yet owned) count toward "Total Items" and the portfolio value. `summarize_includesWishlistItemsInPortfolioValue` pins the current behavior.
