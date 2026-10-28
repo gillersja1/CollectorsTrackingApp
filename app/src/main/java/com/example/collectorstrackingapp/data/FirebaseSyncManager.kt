@@ -51,7 +51,7 @@ class FirebaseSyncManager(private val context: Context) {
             userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("categories") }
         } catch (_: Exception) { null }
 
-    suspend fun uploadImageAndGetUrl(imageUriString: String): String? {
+    suspend fun uploadImageAndGetUrl(imageUriString: String): String {
         return try {
             val uid = userId ?: return imageUriString
             val st = storage ?: return imageUriString
@@ -86,7 +86,9 @@ class FirebaseSyncManager(private val context: Context) {
                 "estimatedValue" to collectible.estimatedValue,
                 "tags" to collectible.tags
             )
-            ref.document(docId).set(data)
+            ref.document(docId).set(data).addOnFailureListener { 
+                // Suppress security/permission errors silently
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -95,7 +97,9 @@ class FirebaseSyncManager(private val context: Context) {
     fun syncCollectibleDelete(collectible: Collectible) {
         try {
             val ref = collectiblesRef ?: return
-            ref.document(collectible.id.toString()).delete()
+            ref.document(collectible.id.toString()).delete().addOnFailureListener {
+                // Suppress silently
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -108,7 +112,9 @@ class FirebaseSyncManager(private val context: Context) {
                 "id" to category.id,
                 "name" to category.name
             )
-            ref.document(category.name).set(data)
+            ref.document(category.name).set(data).addOnFailureListener {
+                // Suppress silently
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -117,7 +123,9 @@ class FirebaseSyncManager(private val context: Context) {
     fun syncCategoryDelete(category: Category) {
         try {
             val ref = categoriesRef ?: return
-            ref.document(category.name).delete()
+            ref.document(category.name).delete().addOnFailureListener {
+                // Suppress silently
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
