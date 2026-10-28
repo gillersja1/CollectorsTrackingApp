@@ -8,9 +8,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
 import com.example.collectorstrackingapp.model.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 /**
  * The Room database for this app.
@@ -44,11 +41,10 @@ abstract class AppDatabase : RoomDatabase() {
         private class AppDatabaseCallback : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                INSTANCE?.let { database ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val categoryDao = database.categoryDao()
-                        categoryDao.insert(Category(name = "FunkoPop"))
-                    }
+                try {
+                    db.execSQL("INSERT INTO categories (name) VALUES ('FunkoPop')")
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         }
