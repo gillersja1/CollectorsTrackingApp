@@ -44,7 +44,11 @@ class FirstFragment : Fragment() {
             val bundle = Bundle().apply {
                 putInt("collectibleId", collectible.id)
             }
-            findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment, bundle)
+            try {
+                findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment, bundle)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
         binding.recyclerView.adapter = adapter
 
@@ -55,68 +59,92 @@ class FirstFragment : Fragment() {
         binding.spinnerSortOrder.adapter = sortAdapter
         binding.spinnerSortOrder.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                selectedSortOrder = sortOptions[position]
-                filterAndSortList(adapter)
+                try {
+                    selectedSortOrder = sortOptions[position]
+                    filterAndSortList(adapter)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         // Observe Categories for Filter Spinner
         collectibleViewModel.allCategories.observe(viewLifecycleOwner) { categories ->
-            val catNames = mutableListOf("All")
-            categories?.forEach { catNames.add(it.name) }
-            allCategoriesList = catNames
+            try {
+                val catNames = mutableListOf("All")
+                categories?.forEach { catNames.add(it.name) }
+                allCategoriesList = catNames
 
-            val catAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, catNames)
-            catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            binding.spinnerCategoryFilter.adapter = catAdapter
-            binding.spinnerCategoryFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                    selectedCategory = catNames[position]
-                    filterAndSortList(adapter)
+                val catAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, catNames)
+                catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                binding.spinnerCategoryFilter.adapter = catAdapter
+                binding.spinnerCategoryFilter.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                        try {
+                            selectedCategory = catNames[position]
+                            filterAndSortList(adapter)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>) {}
                 }
-                override fun onNothingSelected(parent: AdapterView<*>) {}
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
         // Observe Collectibles for Stats and List
         collectibleViewModel.allCollectibles.observe(viewLifecycleOwner) { collectibles ->
-            collectibles?.let {
-                allItems = it
-                updateStats(it)
-                filterAndSortList(adapter)
+            try {
+                collectibles?.let {
+                    allItems = it
+                    updateStats(it)
+                    filterAndSortList(adapter)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
     private fun updateStats(collectibles: List<Collectible>) {
-        val total = collectibles.size
-        val portfolioValue = collectibles.sumOf { it.estimatedValue }
-        binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", total, portfolioValue)
+        try {
+            val total = collectibles.size
+            val portfolioValue = collectibles.sumOf { it.estimatedValue }
+            binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", total, portfolioValue)
 
-        val breakdown = collectibles.groupingBy { it.category }.eachCount()
-        val breakdownText = if (breakdown.isEmpty()) {
-            "Categories: None"
-        } else {
-            breakdown.entries.joinToString(prefix = "Breakdown: ", separator = ", ") { "${it.key} (${it.value})" }
+            val breakdown = collectibles.groupingBy { it.category }.eachCount()
+            val breakdownText = if (breakdown.isEmpty()) {
+                getString(R.string.categories_none)
+            } else {
+                breakdown.entries.joinToString(prefix = "Breakdown: ", separator = ", ") { "${it.key} (${it.value})" }
+            }
+            binding.textViewCategoryBreakdown.text = breakdownText
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        binding.textViewCategoryBreakdown.text = breakdownText
     }
 
     private fun filterAndSortList(adapter: CollectibleAdapter) {
-        var filtered = if (selectedCategory == "All") {
-            allItems
-        } else {
-            allItems.filter { it.category.equals(selectedCategory, ignoreCase = true) }
-        }
+        try {
+            var filtered = if (selectedCategory == "All") {
+                allItems
+            } else {
+                allItems.filter { it.category.equals(selectedCategory, ignoreCase = true) }
+            }
 
-        filtered = when (selectedSortOrder) {
-            "Oldest" -> filtered.sortedBy { it.timestamp }
-            "Name (A-Z)" -> filtered.sortedBy { it.name.lowercase() }
-            else -> filtered.sortedByDescending { it.timestamp } // Newest
-        }
+            filtered = when (selectedSortOrder) {
+                "Oldest" -> filtered.sortedBy { it.timestamp }
+                "Name (A-Z)" -> filtered.sortedBy { it.name.lowercase() }
+                else -> filtered.sortedByDescending { it.timestamp } // Newest
+            }
 
-        adapter.submitList(filtered)
+            adapter.submitList(filtered)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onDestroyView() {
