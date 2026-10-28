@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("com.google.devtools.ksp")
     id("com.google.gms.google-services")
+    jacoco
 }
 
 android {
@@ -19,6 +20,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Generates a JaCoCo report via createDebugUnitTestCoverageReport.
+            enableUnitTestCoverage = true
+        }
         release {
             optimization {
                 enable = false
@@ -31,6 +36,10 @@ android {
     }
     buildFeatures {
         viewBinding = true
+    }
+    testOptions {
+        // Lets Robolectric-based tests (e.g. Room DAO tests) run on the JVM.
+        unitTests.isIncludeAndroidResources = true
     }
 }
 
@@ -66,6 +75,17 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
 
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+}
+
+// Robolectric loads app classes through its own class loader; without these
+// settings JaCoCo skips them and Room/repository tests report 0% coverage.
+tasks.withType<Test>().configureEach {
+    extensions.configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
 }

@@ -20,7 +20,7 @@ class CollectibleRepository(
     }
 
     fun searchCollectibles(query: String?, category: String?): Flow<List<Collectible>> {
-        return collectibleDao.searchCollectibles(query, category)
+        return collectibleDao.searchCollectibles(query?.let(::escapeLikeWildcards), category)
     }
 
     fun insert(collectible: Collectible) {
@@ -37,5 +37,14 @@ class CollectibleRepository(
 
     fun deleteCategory(category: Category) {
         categoryDao.delete(category)
+    }
+
+    companion object {
+        /**
+         * Escapes SQL LIKE wildcards so user input is matched literally.
+         * Without this, searching for "_" or "%" matched every collectible.
+         */
+        fun escapeLikeWildcards(query: String): String =
+            query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     }
 }
