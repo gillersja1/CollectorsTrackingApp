@@ -198,12 +198,30 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_delete_account -> {
+                try {
+                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                    user?.delete()?.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
                 sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
                 navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
                 true
             }
             R.id.action_logout -> {
+                try {
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
                 sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
                 navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
