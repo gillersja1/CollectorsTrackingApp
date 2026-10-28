@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 class CollectibleViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: CollectibleRepository
-    private val syncManager = FirebaseSyncManager(application)
+    private val syncManager by lazy { FirebaseSyncManager(application) }
     val allCollectibles: LiveData<List<Collectible>>
     val allCategories: LiveData<List<Category>>
 
@@ -40,13 +40,9 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                             for (item in remoteList) {
                                 repository.insert(item)
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        } catch (_: Exception) {}
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                } catch (_: Exception) {}
             }
             syncManager.listenToCategories { remoteCategories ->
                 try {
@@ -55,17 +51,11 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                             for (cat in remoteCategories) {
                                 repository.insertCategory(cat)
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                        } catch (_: Exception) {}
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
+                } catch (_: Exception) {}
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
     }
 
     fun getCollectible(id: Int): LiveData<Collectible> {
@@ -86,36 +76,28 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                 }
             }
             syncManager.syncCollectibleInsert(finalCollectible)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
         repository.insert(finalCollectible)
     }
 
     fun delete(collectible: Collectible) = viewModelScope.launch(Dispatchers.IO) {
         try {
             syncManager.syncCollectibleDelete(collectible)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
         repository.delete(collectible)
     }
 
     fun insertCategory(category: Category) = viewModelScope.launch(Dispatchers.IO) {
         try {
             syncManager.syncCategoryInsert(category)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
         repository.insertCategory(category)
     }
 
     fun deleteCategory(category: Category) = viewModelScope.launch(Dispatchers.IO) {
         try {
             syncManager.syncCategoryDelete(category)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (_: Exception) {}
         repository.deleteCategory(category)
     }
 }
