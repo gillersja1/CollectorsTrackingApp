@@ -34,17 +34,33 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         // Listen to remote changes in real-time using addSnapshotListener safely
         try {
             syncManager.listenToCollectibles { remoteList ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    for (item in remoteList) {
-                        repository.insert(item)
+                try {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            for (item in remoteList) {
+                                repository.insert(item)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
             syncManager.listenToCategories { remoteCategories ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    for (cat in remoteCategories) {
-                        repository.insertCategory(cat)
+                try {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            for (cat in remoteCategories) {
+                                repository.insertCategory(cat)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
         } catch (e: Exception) {
