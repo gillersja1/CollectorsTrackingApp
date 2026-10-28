@@ -16,28 +16,34 @@ import java.util.UUID
  */
 class FirebaseSyncManager(private val context: Context) {
 
-    private val auth = FirebaseAuth.getInstance()
-    private val db = FirebaseFirestore.getInstance()
-    private val storage = FirebaseStorage.getInstance()
+    private val auth: FirebaseAuth?
+        get() = try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
+
+    private val db: FirebaseFirestore?
+        get() = try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
+
+    private val storage: FirebaseStorage?
+        get() = try { FirebaseStorage.getInstance() } catch (e: Exception) { null }
 
     private val userId: String?
-        get() = auth.currentUser?.uid
+        get() = auth?.currentUser?.uid
 
     private val collectiblesRef
-        get() = userId?.let { db.collection("users").document(it).collection("collectibles") }
+        get() = userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("collectibles") }
 
     private val categoriesRef
-        get() = userId?.let { db.collection("users").document(it).collection("categories") }
+        get() = userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("categories") }
 
     suspend fun uploadImageAndGetUrl(imageUriString: String): String? {
         val uid = userId ?: return null
+        val st = storage ?: return null
         if (!imageUriString.startsWith("content://") && !imageUriString.startsWith("file://")) {
             return imageUriString
         }
         try {
             val uri = Uri.parse(imageUriString)
             val fileName = "collectibles_${UUID.randomUUID()}.jpg"
-            val ref = storage.reference.child("users/$uid/images/$fileName")
+            val ref = st.reference.child("users/$uid/images/$fileName")
 
             ref.putFile(uri).await()
             val downloadUrl = ref.downloadUrl.await()
@@ -62,12 +68,20 @@ class FirebaseSyncManager(private val context: Context) {
             "estimatedValue" to collectible.estimatedValue,
             "tags" to collectible.tags
         )
-        ref.document(docId).set(data)
+        try {
+            ref.document(docId).set(data)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun syncCollectibleDelete(collectible: Collectible) {
         val ref = collectiblesRef ?: return
-        ref.document(collectible.id.toString()).delete()
+        try {
+            ref.document(collectible.id.toString()).delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun syncCategoryInsert(category: Category) {
@@ -76,48 +90,64 @@ class FirebaseSyncManager(private val context: Context) {
             "id" to category.id,
             "name" to category.name
         )
-        ref.document(category.name).set(data)
+        try {
+            ref.document(category.name).set(data)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun syncCategoryDelete(category: Category) {
         val ref = categoriesRef ?: return
-        ref.document(category.name).delete()
+        try {
+            ref.document(category.name).delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun listenToCollectibles(onCollectiblesChanged: (List<Collectible>) -> Unit) {
         val ref = collectiblesRef ?: return
-        ref.addSnapshotListener { snapshot, e ->
-            if (e != null) return@addSnapshotListener
-            if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { doc ->
-                    val id = doc.getLong("id")?.toInt() ?: 0
-                    val name = doc.getString("name") ?: ""
-                    val category = doc.getString("category") ?: ""
-                    val description = doc.getString("description") ?: ""
-                    val imagePath = doc.getString("imagePath")
-                    val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
-                    val isWishlist = doc.getBoolean("isWishlist") ?: false
-                    val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
-                    val tags = doc.getString("tags") ?: ""
-                    Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
+        try {
+            ref.addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        val id = doc.getLong("id")?.toInt() ?: 0
+                        val name = doc.getString("name") ?: ""
+                        val category = doc.getString("category") ?: ""
+                        val description = doc.getString("description") ?: ""
+                        val imagePath = doc.getString("imagePath")
+                        val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                        val isWishlist = doc.getBoolean("isWishlist") ?: false
+                        val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
+                        val tags = doc.getString("tags") ?: ""
+                        Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
+                    }
+                    onCollectiblesChanged(list)
                 }
-                onCollectiblesChanged(list)
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     fun listenToCategories(onCategoriesChanged: (List<Category>) -> Unit) {
         val ref = categoriesRef ?: return
-        ref.addSnapshotListener { snapshot, e ->
-            if (e != null) return@addSnapshotListener
-            if (snapshot != null) {
-                val list = snapshot.documents.mapNotNull { doc ->
-                    val id = doc.getLong("id")?.toInt() ?: 0
-                    val name = doc.getString("name") ?: ""
-                    Category(id = id, name = name)
+        try {
+            ref.addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        val id = doc.getLong("id")?.toInt() ?: 0
+                        val name = doc.getString("name") ?: ""
+                        Category(id = id, name = name)
+                    }
+                    onCategoriesChanged(list)
                 }
-                onCategoriesChanged(list)
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }

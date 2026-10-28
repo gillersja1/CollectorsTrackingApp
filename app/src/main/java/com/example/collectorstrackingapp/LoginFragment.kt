@@ -18,7 +18,7 @@ class LoginFragment : Fragment() {
     private var _binding: FragmentLoginBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var auth: FirebaseAuth
+    private var auth: FirebaseAuth? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -31,10 +31,14 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        auth = FirebaseAuth.getInstance()
+        auth = try {
+            FirebaseAuth.getInstance()
+        } catch (e: Exception) {
+            null
+        }
 
         // Check if already logged in safely using view.post
-        if (auth.currentUser != null) {
+        if (auth?.currentUser != null) {
             view.post {
                 try {
                     findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
@@ -53,7 +57,13 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            auth.signInWithEmailAndPassword(email, password)
+            val firebaseAuth = auth
+            if (firebaseAuth == null) {
+                Toast.makeText(requireContext(), "Firebase Auth not initialized", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Welcome back!", Toast.LENGTH_SHORT).show()
@@ -77,7 +87,13 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            auth.createUserWithEmailAndPassword(email, password)
+            val firebaseAuth = auth
+            if (firebaseAuth == null) {
+                Toast.makeText(requireContext(), "Firebase Auth not initialized", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show()
@@ -99,7 +115,13 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            auth.sendPasswordResetEmail(email)
+            val firebaseAuth = auth
+            if (firebaseAuth == null) {
+                Toast.makeText(requireContext(), "Firebase Auth not initialized", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            firebaseAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Password reset email sent to $email", Toast.LENGTH_LONG).show()
