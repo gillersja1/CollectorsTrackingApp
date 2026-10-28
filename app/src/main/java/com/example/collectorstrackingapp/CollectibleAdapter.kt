@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import com.example.collectorstrackingapp.databinding.ItemCollectibleBinding
 import com.example.collectorstrackingapp.model.Collectible
+import java.util.Locale
 
 class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : ListAdapter<Collectible, CollectibleAdapter.CollectibleViewHolder>(CollectiblesComparator()) {
 
@@ -32,7 +33,7 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
             binding.textViewDescription.text = collectible.description
 
             if (collectible.estimatedValue > 0) {
-                binding.textViewValue.text = "Value: $${String.format("%.2f", collectible.estimatedValue)}"
+                binding.textViewValue.text = String.format(Locale.US, "Value: $%.2f", collectible.estimatedValue)
                 binding.textViewValue.visibility = View.VISIBLE
             } else {
                 binding.textViewValue.visibility = View.GONE
