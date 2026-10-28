@@ -108,31 +108,41 @@ class MainActivity : AppCompatActivity() {
      * recently supplied in [onSaveInstanceState]. **Note: Otherwise it is null.**
      */
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        try {
+            installSplashScreen()
+            super.onCreate(savedInstanceState)
+            enableEdgeToEdge()
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+            binding = ActivityMainBinding.inflate(layoutInflater)
+            setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-        setSupportActionBar(binding.toolbar)
-
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
-        val navController = navHostFragment.navController
-
-        appBarConfiguration = AppBarConfiguration(navController.graph)
-        setupActionBarWithNavController(navController, appBarConfiguration)
-
-        binding.fab.setOnClickListener {
-            if (navController.currentDestination?.id == R.id.FirstFragment) {
-                navController.navigate(R.id.action_FirstFragment_to_SecondFragment)
+            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                insets
             }
+            setSupportActionBar(binding.toolbar)
+
+            val navHostFragment =
+                supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
+            val navController = navHostFragment.navController
+
+            appBarConfiguration = AppBarConfiguration(navController.graph)
+            setupActionBarWithNavController(navController, appBarConfiguration)
+
+            binding.fab.setOnClickListener {
+                if (navController.currentDestination?.id == R.id.FirstFragment) {
+                    navController.navigate(R.id.action_FirstFragment_to_SecondFragment)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            setContentView(android.widget.TextView(this).apply {
+                text = "Startup Error: ${e.message}\n\n${e.stackTraceToString()}"
+                textSize = 14f
+                setPadding(32, 32, 32, 32)
+                setTextColor(android.graphics.Color.RED)
+            })
         }
     }
 
