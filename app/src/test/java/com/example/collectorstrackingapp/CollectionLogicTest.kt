@@ -47,13 +47,24 @@ class CollectionLogicTest {
     }
 
     @Test
-    fun summarize_includesWishlistItemsInPortfolioValue() {
-        // Documents current behavior: wishlist items (not yet owned) count
-        // toward the total and the portfolio value. See README "Open questions".
-        val summary = CollectionLogic.summarize(listOf(batman, item("Grail", value = 1000.0, wishlist = true)))
+    fun summarize_excludesWishlistItems() {
+        // Regression test: wishlist items (not yet owned) used to count toward
+        // the total, the portfolio value and the category breakdown.
+        val grail = item("Grail", "Comics", value = 1000.0, wishlist = true)
 
-        assertEquals(2, summary.totalItems)
-        assertEquals(1015.0, summary.portfolioValue, 0.0)
+        val summary = CollectionLogic.summarize(listOf(batman, grail))
+
+        assertEquals(1, summary.totalItems)
+        assertEquals(15.0, summary.portfolioValue, 0.0)
+        assertEquals(mapOf("FunkoPop" to 1), summary.categoryBreakdown)
+    }
+
+    @Test
+    fun filter_keepsWishlistItemsInTheList() {
+        // Wishlist items are left out of the stats but still shown in the list.
+        val grail = item("Grail", wishlist = true)
+
+        assertEquals(listOf(grail, batman), CollectionLogic.filterAndSort(listOf(batman, grail), CATEGORY_ALL, SORT_OLDEST))
     }
 
     // --- filterAndSort ---

@@ -75,9 +75,8 @@ sorting used to live inside `FirstFragment`; they were pulled out into
 
 | Defect | Fix | Regression tests |
 |---|---|---|
-| Search treated `_` and `%` as SQL `LIKE` wildcards, so searching for `_` or `%` returned **every** collectible | User input is escaped (`CollectibleRepository.escapeLikeWildcards`) and the query declares `ESCAPE '\'` | `search_underscoreIsMatchedLiterally`, `search_percentIsMatchedLiterally`, `search_backslashIsMatchedLiterally`. Each was confirmed to fail with the fix reverted |
+| Search treated `_` and `%` as SQL `LIKE` wildcards, so searching for `_` or `%` returned **every** collectible | User input is escaped (`CollectibleRepository.escapeLikeWildcards`) and the query declares `ESCAPE ''` | `search_underscoreIsMatchedLiterally`, `search_percentIsMatchedLiterally`, `search_backslashIsMatchedLiterally`. Each was confirmed to fail with the fix reverted |
+| The same category name could be added twice. `CategoryDao.insert` uses `OnConflictStrategy.IGNORE`, but with no unique index on `name`, IGNORE only applied to ID clashes | Unique index on `categories.name`, with the database version bumped to 7 so existing installs rebuild the schema instead of crashing with a Room integrity error | `insertCategory_withDuplicateName_isIgnored` |
+| Wishlist items (not yet owned) counted toward "Total Items", the portfolio value and the category breakdown | `CollectionLogic.summarize` counts owned items only; wishlist items still appear in the list | `summarize_excludesWishlistItems`, `filter_keepsWishlistItemsInTheList` |
 
-### Open questions
-
-- **Duplicate categories:** `CategoryDao.insert` uses `OnConflictStrategy.IGNORE`, but `name` has no unique index, so IGNORE only applies to ID clashes and the same category name can be added twice.
-- **Wishlist in portfolio value:** wishlist items (not yet owned) count toward "Total Items" and the portfolio value. `summarize_includesWishlistItemsInPortfolioValue` pins the current behavior.
+The duplicate-name check is case-sensitive, so "FunkoPop" and "funkopop" can both exist.
