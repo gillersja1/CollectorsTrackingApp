@@ -53,6 +53,24 @@ class LoginFragment : Fragment() {
             null
         }
 
+        binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
+            val isActionValid = actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND ||
+                                actionId == android.view.inputmethod.EditorInfo.IME_NULL
+            val isEnterKey = (event != null && 
+                             event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && 
+                             event.action == android.view.KeyEvent.ACTION_DOWN)
+
+            if (isActionValid || isEnterKey) {
+                binding.loginButton.performClick()
+                true
+            } else {
+                false
+            }
+        }
+
         binding.loginButton.setOnClickListener {
             val email = binding.usernameEditText.text.toString().trim()
             val password = binding.passwordEditText.text.toString().trim()
