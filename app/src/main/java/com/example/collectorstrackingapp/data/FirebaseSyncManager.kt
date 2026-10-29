@@ -131,56 +131,50 @@ class FirebaseSyncManager(private val context: Context) {
         }
     }
 
-    fun listenToCollectibles(onCollectiblesChanged: (List<Collectible>) -> Unit) {
+    fun fetchRemoteCollectibles(onResult: (List<Collectible>) -> Unit) {
         try {
             val ref = collectiblesRef ?: return
-            ref.addSnapshotListener { snapshot, e ->
+            ref.get().addOnSuccessListener { snapshot ->
                 try {
-                    if (e != null) return@addSnapshotListener
-                    if (snapshot != null) {
-                        val list = snapshot.documents.mapNotNull { doc ->
-                            try {
-                                val id = doc.getLong("id")?.toInt() ?: 0
-                                val name = doc.getString("name") ?: ""
-                                val category = doc.getString("category") ?: ""
-                                val description = doc.getString("description") ?: ""
-                                val imagePath = doc.getString("imagePath")
-                                val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
-                                val isWishlist = doc.getBoolean("isWishlist") ?: false
-                                val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
-                                val tags = doc.getString("tags") ?: ""
-                                Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
-                            } catch (_: Exception) {
-                                null
-                            }
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            val id = doc.getLong("id")?.toInt() ?: 0
+                            val name = doc.getString("name") ?: ""
+                            val category = doc.getString("category") ?: ""
+                            val description = doc.getString("description") ?: ""
+                            val imagePath = doc.getString("imagePath")
+                            val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                            val isWishlist = doc.getBoolean("isWishlist") ?: false
+                            val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
+                            val tags = doc.getString("tags") ?: ""
+                            Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
+                        } catch (_: Exception) {
+                            null
                         }
-                        onCollectiblesChanged(list)
                     }
+                    onResult(list)
                 } catch (_: Exception) {}
-            }
+            }.addOnFailureListener {}
         } catch (_: Exception) {}
     }
 
-    fun listenToCategories(onCategoriesChanged: (List<Category>) -> Unit) {
+    fun fetchRemoteCategories(onResult: (List<Category>) -> Unit) {
         try {
             val ref = categoriesRef ?: return
-            ref.addSnapshotListener { snapshot, e ->
+            ref.get().addOnSuccessListener { snapshot ->
                 try {
-                    if (e != null) return@addSnapshotListener
-                    if (snapshot != null) {
-                        val list = snapshot.documents.mapNotNull { doc ->
-                            try {
-                                val id = doc.getLong("id")?.toInt() ?: 0
-                                val name = doc.getString("name") ?: ""
-                                Category(id = id, name = name)
-                            } catch (_: Exception) {
-                                null
-                            }
+                    val list = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            val id = doc.getLong("id")?.toInt() ?: 0
+                            val name = doc.getString("name") ?: ""
+                            Category(id = id, name = name)
+                        } catch (_: Exception) {
+                            null
                         }
-                        onCategoriesChanged(list)
                     }
+                    onResult(list)
                 } catch (_: Exception) {}
-            }
+            }.addOnFailureListener {}
         } catch (_: Exception) {}
     }
 }
