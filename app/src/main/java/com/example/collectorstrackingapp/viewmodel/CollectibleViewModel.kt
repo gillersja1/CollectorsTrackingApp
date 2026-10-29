@@ -31,10 +31,10 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         allCollectibles = repository.allCollectibles.asLiveData()
         allCategories = repository.allCategories.asLiveData()
 
-        // Fetch remote data once on startup to prevent circular feedback loops
-        try {
-            syncManager.fetchRemoteCollectibles { remoteList ->
-                try {
+        // Fetch remote data safely off the main thread to prevent ANRs
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                syncManager.fetchRemoteCollectibles { remoteList ->
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
                             for (item in remoteList) {
@@ -42,10 +42,8 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                             }
                         } catch (_: Exception) {}
                     }
-                } catch (_: Exception) {}
-            }
-            syncManager.fetchRemoteCategories { remoteCategories ->
-                try {
+                }
+                syncManager.fetchRemoteCategories { remoteCategories ->
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
                             for (cat in remoteCategories) {
@@ -53,9 +51,9 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                             }
                         } catch (_: Exception) {}
                     }
-                } catch (_: Exception) {}
-            }
-        } catch (_: Exception) {}
+                }
+            } catch (_: Exception) {}
+        }
     }
 
     fun getCollectible(id: Int): LiveData<Collectible> {
