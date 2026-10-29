@@ -31,9 +31,9 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         allCollectibles = repository.allCollectibles.asLiveData()
         allCategories = repository.allCategories.asLiveData()
 
-        // Listen to remote changes in real-time using addSnapshotListener safely
+        // Fetch remote data once on startup to prevent circular feedback loops
         try {
-            syncManager.listenToCollectibles { remoteList ->
+            syncManager.fetchRemoteCollectibles { remoteList ->
                 try {
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
@@ -44,7 +44,7 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 } catch (_: Exception) {}
             }
-            syncManager.listenToCategories { remoteCategories ->
+            syncManager.fetchRemoteCategories { remoteCategories ->
                 try {
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
