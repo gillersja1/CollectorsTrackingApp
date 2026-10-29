@@ -33,7 +33,12 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
             binding.textViewDescription.text = collectible.description
 
             if (collectible.estimatedValue > 0) {
-                binding.textViewValue.text = String.format(Locale.US, "Value: $%.2f", collectible.estimatedValue)
+                val formattedVal = if (collectible.estimatedValue % 1.0 == 0.0) {
+                    String.format(Locale.US, "$%d", collectible.estimatedValue.toLong())
+                } else {
+                    String.format(Locale.US, "$%.2f", collectible.estimatedValue)
+                }
+                binding.textViewValue.text = "Value: $formattedVal"
                 binding.textViewValue.visibility = View.VISIBLE
             } else {
                 binding.textViewValue.visibility = View.GONE
@@ -48,11 +53,11 @@ class CollectibleAdapter(private val onItemClicked: (Collectible) -> Unit) : Lis
             if (collectible.imagePath != null) {
                 binding.imageViewCollectible.load(collectible.imagePath) {
                     crossfade(true)
-                    placeholder(android.R.drawable.ic_menu_gallery)
-                    error(android.R.drawable.ic_menu_report_image)
+                    placeholder(R.drawable.ic_collectible_placeholder)
+                    error(R.drawable.ic_collectible_placeholder)
                 }
             } else {
-                binding.imageViewCollectible.setImageResource(android.R.drawable.ic_menu_gallery)
+                binding.imageViewCollectible.setImageResource(R.drawable.ic_collectible_placeholder)
             }
         }
 
