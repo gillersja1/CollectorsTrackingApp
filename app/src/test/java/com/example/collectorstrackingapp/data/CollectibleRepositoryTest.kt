@@ -217,4 +217,27 @@ class CollectibleRepositoryTest {
 
         assertTrue(repository.allCollectibles.first().isEmpty())
     }
+
+    @Test
+    fun removeDuplicatesKeepsOldestCopyOnly() = runBlocking {
+        val original = repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 100))
+
+        val removed = repository.removeDuplicates()
+
+        assertEquals(2, removed.size)
+        assertEquals(listOf(original), repository.getAllNow().map { it.id })
+    }
+
+    @Test
+    fun removeDuplicatesLeavesDifferentItemsAlone() = runBlocking {
+        // Same name but added at different times: two real items, not a sync copy
+        repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 200))
+        repository.insert(item("Pikachu", timestamp = 100))
+
+        assertTrue(repository.removeDuplicates().isEmpty())
+        assertEquals(3, repository.getAllNow().size)
+    }
 }

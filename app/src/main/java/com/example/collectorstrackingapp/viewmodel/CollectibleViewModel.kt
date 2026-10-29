@@ -1,6 +1,7 @@
 package com.example.collectorstrackingapp.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.asLiveData
@@ -45,6 +46,7 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                             for (item in remoteList.filter { it.id > 0 }) {
                                 repository.insert(item)
                             }
+                            repairSyncOnce()
                         } catch (_: Exception) {}
                     }
                 }
@@ -59,6 +61,28 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                 }
             } catch (_: Exception) {}
         }
+    }
+
+    /**
+     * One-time cleanup, per signed-in account, for data written by the old sync bug:
+     * removes the duplicated items, deletes the stray id-0 cloud document, and
+     * uploads every local item under its real id so other devices get them.
+     * Runs only after a successful cloud fetch, so the user is signed in.
+     */
+    private fun repairSyncOnce() {
+        val uid = syncManager.currentUserId ?: return
+        val prefs = getApplication<Application>().getSharedPreferences("sync_repair", Context.MODE_PRIVATE)
+        val key = "duplicate_fix_v1_$uid"
+        if (prefs.getBoolean(key, false)) return
+
+        for (duplicate in repository.removeDuplicates()) {
+            syncManager.syncCollectibleDelete(duplicate)
+        }
+        syncManager.syncCollectibleDelete(Collectible(id = 0, name = "", category = "", description = ""))
+        for (item in repository.getAllNow()) {
+            syncManager.syncCollectibleInsert(item)
+        }
+        prefs.edit().putBoolean(key, true).apply()
     }
 
     fun getCollectible(id: Int): LiveData<Collectible> {

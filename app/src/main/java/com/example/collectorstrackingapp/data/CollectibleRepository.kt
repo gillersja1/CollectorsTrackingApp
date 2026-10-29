@@ -32,6 +32,24 @@ class CollectibleRepository(
         collectibleDao.delete(collectible)
     }
 
+    fun getAllNow(): List<Collectible> = collectibleDao.getAllNow()
+
+    /**
+     * Deletes copies of the same item, keeping the oldest row (lowest id).
+     * Two rows are copies when every field except the id matches; the old
+     * sync bug re-imported items with all their fields intact, including the
+     * timestamp, so real separate items are never matched.
+     * Returns the rows that were deleted.
+     */
+    fun removeDuplicates(): List<Collectible> {
+        val removed = collectibleDao.getAllNow()
+            .groupBy { it.copy(id = 0) }
+            .values
+            .flatMap { copies -> copies.drop(1) }
+        removed.forEach { collectibleDao.delete(it) }
+        return removed
+    }
+
     fun insertCategory(category: Category) {
         categoryDao.insert(category)
     }

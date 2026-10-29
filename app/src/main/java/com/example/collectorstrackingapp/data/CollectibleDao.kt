@@ -19,6 +19,9 @@ interface CollectibleDao {
     @Query("SELECT * FROM collectibles WHERE id = :id")
     fun getCollectible(id: Int): Flow<Collectible>
 
+    @Query("SELECT * FROM collectibles ORDER BY id ASC")
+    fun getAllNow(): List<Collectible>
+
     /**
      * [query] is matched literally: callers must escape LIKE wildcards with
      * [CollectibleRepository.escapeLikeWildcards] first.
