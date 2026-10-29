@@ -1,13 +1,16 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.CollectorsTrackingApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/navy_primary</item>
+        <item name="colorPrimaryVariant">@color/navy_dark</item>
+        <item name="colorSecondary">@color/navy_accent</item>
+        <item name="android:colorBackground">@color/app_background</item>
+        <item name="colorSurface">@color/white</item>
     </style>
 
     <style name="Theme.CollectorsTrackingApp" parent="Base.Theme.CollectorsTrackingApp" />
 
     <style name="Theme.CollectorsTrackingApp.Launching" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:windowBackground">?attr/colorSurface</item>
+        <item name="android:windowBackground">@color/app_background</item>
     </style>
 </resources>
