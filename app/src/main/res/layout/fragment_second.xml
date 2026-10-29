@@ -15,8 +15,8 @@
             android:id="@+id/imageViewPreview"
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:scaleType="centerCrop"
-            android:src="@android:drawable/ic_menu_gallery"
+            android:scaleType="center"
+            android:src="@drawable/ic_collectible_placeholder"
             app:layout_constraintTop_toTopOf="parent"
             android:background="#EEEEEE" />
 

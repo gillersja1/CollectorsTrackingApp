@@ -112,7 +112,12 @@ class FirstFragment : Fragment() {
     private fun updateStats(collectibles: List<Collectible>) {
         try {
             val summary = CollectionLogic.summarize(collectibles)
-            binding.textViewTotalItems.text = String.format(Locale.getDefault(), "Total Items: %d | Portfolio: $%.2f", summary.totalItems, summary.portfolioValue)
+            val formattedPortfolio = if (summary.portfolioValue % 1.0 == 0.0) {
+                String.format(Locale.US, "$%d", summary.portfolioValue.toLong())
+            } else {
+                String.format(Locale.US, "$%.2f", summary.portfolioValue)
+            }
+            binding.textViewTotalItems.text = "Total Items: ${summary.totalItems} | Portfolio: $formattedPortfolio"
 
             val breakdown = summary.categoryBreakdown
             val breakdownText = if (breakdown.isEmpty()) {
