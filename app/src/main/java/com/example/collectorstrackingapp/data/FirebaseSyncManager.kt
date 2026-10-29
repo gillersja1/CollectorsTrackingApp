@@ -41,6 +41,9 @@ class FirebaseSyncManager(private val context: Context) {
     private val userId: String?
         get() = try { auth?.currentUser?.uid } catch (_: Exception) { null }
 
+    val currentUserId: String?
+        get() = userId
+
     private val collectiblesRef
         get() = try {
             userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("collectibles") }

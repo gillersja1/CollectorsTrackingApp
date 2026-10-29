@@ -2,7 +2,7 @@ package com.example.collectorstrackingapp
 
 import android.app.Application
 import android.util.Log
-import com.google.firebase.g to gitFirebaseApp
+import com.google.firebase.FirebaseApp
 
 class CollectorsApp : Application() {
     companion object {
