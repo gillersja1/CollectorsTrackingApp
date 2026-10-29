@@ -71,6 +71,13 @@
         android:text="@string/forgot_password"
         android:textColor="?attr/colorPrimary"
         android:textStyle="bold"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:layout_marginBottom="16dp" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
 
 </LinearLayout>

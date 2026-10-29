@@ -68,8 +68,17 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            binding.progressBar.visibility = View.VISIBLE
+            binding.loginButton.isEnabled = false
+            binding.registerButton.isEnabled = false
+
             firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
+                    if (_binding != null) {
+                        binding.progressBar.visibility = View.GONE
+                        binding.loginButton.isEnabled = true
+                        binding.registerButton.isEnabled = true
+                    }
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Welcome back!", Toast.LENGTH_SHORT).show()
                         try {
@@ -98,8 +107,17 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            binding.progressBar.visibility = View.VISIBLE
+            binding.loginButton.isEnabled = false
+            binding.registerButton.isEnabled = false
+
             firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
+                    if (_binding != null) {
+                        binding.progressBar.visibility = View.GONE
+                        binding.loginButton.isEnabled = true
+                        binding.registerButton.isEnabled = true
+                    }
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Account created successfully!", Toast.LENGTH_SHORT).show()
                         try {
@@ -126,8 +144,13 @@ class LoginFragment : Fragment() {
                 return@setOnClickListener
             }
 
+            binding.progressBar.visibility = View.VISIBLE
+
             firebaseAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener { task ->
+                    if (_binding != null) {
+                        binding.progressBar.visibility = View.GONE
+                    }
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Password reset email sent to $email", Toast.LENGTH_LONG).show()
                     } else {
