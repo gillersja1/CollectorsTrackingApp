@@ -208,6 +208,10 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        db.clearAllTables()
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -219,6 +223,10 @@ class MainActivity : AppCompatActivity() {
             R.id.action_logout -> {
                 try {
                     com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                    val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        db.clearAllTables()
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
