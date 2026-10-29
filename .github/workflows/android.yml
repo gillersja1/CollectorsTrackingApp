@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      # Needed so the job can commit the new APK to release/
+      contents: write
     steps:
     - uses: actions/checkout@v4
     - name: set up JDK 17
@@ -31,3 +34,19 @@ jobs:
           app/build/reports/coverage/test/debug
     - name: Build Debug APK
       run: ./gradlew assembleDebug
+    - name: Publish APK to release folder
+      # Only after a successful build on main, never on pull requests.
+      # Commits made with GITHUB_TOKEN don't trigger another workflow run, so this can't loop.
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        cp app/build/outputs/apk/debug/app-debug.apk release/app-debug.apk
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add release/app-debug.apk
+        if git diff --cached --quiet; then
+          echo "APK unchanged, nothing to commit"
+          exit 0
+        fi
+        git commit -m "Update release APK from ${GITHUB_SHA::7} [skip ci]"
+        git pull --rebase origin main
+        git push origin HEAD:main
