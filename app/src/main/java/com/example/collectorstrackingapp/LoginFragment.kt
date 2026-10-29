@@ -1,6 +1,8 @@
 package com.example.collectorstrackingapp
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -90,8 +92,20 @@ class LoginFragment : Fragment() {
             binding.loginButton.isEnabled = false
             binding.registerButton.isEnabled = false
 
+            val handler = Handler(Looper.getMainLooper())
+            val timeoutRunnable = Runnable {
+                if (_binding != null) {
+                    binding.progressBar.visibility = View.GONE
+                    binding.loginButton.isEnabled = true
+                    binding.registerButton.isEnabled = true
+                    Toast.makeText(requireContext(), "Login timed out. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                }
+            }
+            handler.postDelayed(timeoutRunnable, 6000L)
+
             firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
+                    handler.removeCallbacks(timeoutRunnable)
                     if (_binding != null) {
                         binding.progressBar.visibility = View.GONE
                         binding.loginButton.isEnabled = true
@@ -129,8 +143,20 @@ class LoginFragment : Fragment() {
             binding.loginButton.isEnabled = false
             binding.registerButton.isEnabled = false
 
+            val handler = Handler(Looper.getMainLooper())
+            val timeoutRunnable = Runnable {
+                if (_binding != null) {
+                    binding.progressBar.visibility = View.GONE
+                    binding.loginButton.isEnabled = true
+                    binding.registerButton.isEnabled = true
+                    Toast.makeText(requireContext(), "Registration timed out. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                }
+            }
+            handler.postDelayed(timeoutRunnable, 6000L)
+
             firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(requireActivity()) { task ->
+                    handler.removeCallbacks(timeoutRunnable)
                     if (_binding != null) {
                         binding.progressBar.visibility = View.GONE
                         binding.loginButton.isEnabled = true
@@ -164,8 +190,18 @@ class LoginFragment : Fragment() {
 
             binding.progressBar.visibility = View.VISIBLE
 
+            val handler = Handler(Looper.getMainLooper())
+            val timeoutRunnable = Runnable {
+                if (_binding != null) {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(requireContext(), "Request timed out. Please check your internet connection.", Toast.LENGTH_LONG).show()
+                }
+            }
+            handler.postDelayed(timeoutRunnable, 6000L)
+
             firebaseAuth.sendPasswordResetEmail(email)
                 .addOnCompleteListener { task ->
+                    handler.removeCallbacks(timeoutRunnable)
                     if (_binding != null) {
                         binding.progressBar.visibility = View.GONE
                     }
