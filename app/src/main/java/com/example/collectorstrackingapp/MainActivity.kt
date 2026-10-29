@@ -198,33 +198,55 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_delete_account -> {
-                try {
-                    val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                    user?.delete()?.addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Delete Account")
+                    .setMessage("Are you sure you want to permanently delete your account and all local data? This action cannot be undone.")
+                    .setPositiveButton("Delete") { _, _ ->
+                        try {
+                            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+                            user?.delete()?.addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                            val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                db.clearAllTables()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
+                        val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
+                        sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
                     }
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
-                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
-                navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                    .setNegativeButton("Cancel", null)
+                    .show()
                 true
             }
             R.id.action_logout -> {
-                try {
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
-                sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
-                navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Logout")
+                    .setMessage("Are you sure you want to log out?")
+                    .setPositiveButton("Logout") { _, _ ->
+                        try {
+                            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                            val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                db.clearAllTables()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
+                        sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
                 true
             }
             else -> super.onOptionsItemSelected(item)

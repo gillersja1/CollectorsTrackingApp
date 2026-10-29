@@ -201,10 +201,17 @@ class SecondFragment : Fragment() {
 
     private fun deleteCollectible() {
         if (currentCollectibleId != -1) {
-            val collectibleToDelete = currentCollectible ?: Collectible(id = currentCollectibleId, name = "", category = "", description = "")
-            collectibleViewModel.delete(collectibleToDelete)
-            Toast.makeText(context, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
-            findNavController().navigateUp()
+            androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle("Delete Collectible")
+                .setMessage("Are you sure you want to delete this item? This action cannot be undone.")
+                .setPositiveButton("Delete") { _, _ ->
+                    val collectibleToDelete = currentCollectible ?: Collectible(id = currentCollectibleId, name = "", category = "", description = "")
+                    collectibleViewModel.delete(collectibleToDelete)
+                    Toast.makeText(context, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
+                    findNavController().navigateUp()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
         }
     }
 
