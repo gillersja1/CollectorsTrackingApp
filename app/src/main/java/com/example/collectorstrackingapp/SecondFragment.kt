@@ -200,8 +200,9 @@ class SecondFragment : Fragment() {
     }
 
     private fun deleteCollectible() {
-        currentCollectible?.let {
-            collectibleViewModel.delete(it)
+        if (currentCollectibleId != -1) {
+            val collectibleToDelete = currentCollectible ?: Collectible(id = currentCollectibleId, name = "", category = "", description = "")
+            collectibleViewModel.delete(collectibleToDelete)
             Toast.makeText(context, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
             findNavController().navigateUp()
         }
