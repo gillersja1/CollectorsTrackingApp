@@ -198,4 +198,23 @@ class CollectibleRepositoryTest {
         assertEquals("collector@example.com", db.userDao().getUserByUsername("collector@example.com")?.username)
         assertNull(db.userDao().getUserByUsername("someone@example.com"))
     }
+
+    @Test
+    fun insertReturnsGeneratedIdForNewItem() = runBlocking {
+        val first = repository.insert(item("Charizard"))
+        val second = repository.insert(item("Pikachu"))
+
+        assertTrue(first > 0)
+        assertTrue(second > first)
+        // The returned id is what gets synced, so it must match the stored row
+        assertEquals("Pikachu", repository.getCollectible(second).first().name)
+    }
+
+    @Test
+    fun deletingByReturnedIdRemovesTheItem() = runBlocking {
+        val id = repository.insert(item("Charizard"))
+        repository.delete(item("Charizard").copy(id = id))
+
+        assertTrue(repository.allCollectibles.first().isEmpty())
+    }
 }

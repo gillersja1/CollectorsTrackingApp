@@ -23,8 +23,9 @@ class CollectibleRepository(
         return collectibleDao.searchCollectibles(query?.let(::escapeLikeWildcards), category)
     }
 
-    fun insert(collectible: Collectible) {
-        collectibleDao.insert(collectible)
+    /** Saves the item and returns its id (newly generated when the item's id was 0). */
+    fun insert(collectible: Collectible): Int {
+        return collectibleDao.insert(collectible).toInt()
     }
 
     fun delete(collectible: Collectible) {

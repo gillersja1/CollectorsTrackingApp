@@ -26,8 +26,9 @@ interface CollectibleDao {
     @Query("SELECT * FROM collectibles WHERE (:query IS NULL OR name LIKE '%' || :query || '%' ESCAPE '\\' OR tags LIKE '%' || :query || '%' ESCAPE '\\') AND (:category IS NULL OR :category = 'All' OR category = :category) ORDER BY timestamp DESC")
     fun searchCollectibles(query: String?, category: String?): Flow<List<Collectible>>
 
+    /** Returns the row id, which is the id Room generated for a new item. */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(collectible: Collectible)
+    fun insert(collectible: Collectible): Long
 
     @Delete
     fun delete(collectible: Collectible)
