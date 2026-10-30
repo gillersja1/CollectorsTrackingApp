@@ -19,3 +19,6 @@ local.properties
 *.artifact.md
 .idea/planningMode.xml
 
+# Built APKs are published as GitHub Releases by CI, not committed
+/release/
+*.apk

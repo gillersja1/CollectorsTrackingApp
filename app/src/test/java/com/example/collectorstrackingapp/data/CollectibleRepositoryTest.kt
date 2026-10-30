@@ -198,4 +198,46 @@ class CollectibleRepositoryTest {
         assertEquals("collector@example.com", db.userDao().getUserByUsername("collector@example.com")?.username)
         assertNull(db.userDao().getUserByUsername("someone@example.com"))
     }
+
+    @Test
+    fun insertReturnsGeneratedIdForNewItem() = runBlocking {
+        val first = repository.insert(item("Charizard"))
+        val second = repository.insert(item("Pikachu"))
+
+        assertTrue(first > 0)
+        assertTrue(second > first)
+        // The returned id is what gets synced, so it must match the stored row
+        assertEquals("Pikachu", repository.getCollectible(second).first().name)
+    }
+
+    @Test
+    fun deletingByReturnedIdRemovesTheItem() = runBlocking {
+        val id = repository.insert(item("Charizard"))
+        repository.delete(item("Charizard").copy(id = id))
+
+        assertTrue(repository.allCollectibles.first().isEmpty())
+    }
+
+    @Test
+    fun removeDuplicatesKeepsOldestCopyOnly() = runBlocking {
+        val original = repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 100))
+
+        val removed = repository.removeDuplicates()
+
+        assertEquals(2, removed.size)
+        assertEquals(listOf(original), repository.getAllNow().map { it.id })
+    }
+
+    @Test
+    fun removeDuplicatesLeavesDifferentItemsAlone() = runBlocking {
+        // Same name but added at different times: two real items, not a sync copy
+        repository.insert(item("Charizard", timestamp = 100))
+        repository.insert(item("Charizard", timestamp = 200))
+        repository.insert(item("Pikachu", timestamp = 100))
+
+        assertTrue(repository.removeDuplicates().isEmpty())
+        assertEquals(3, repository.getAllNow().size)
+    }
 }

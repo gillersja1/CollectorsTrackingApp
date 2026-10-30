@@ -18,7 +18,7 @@ An Android application designed to help collectors organize and track their coll
 - **In-App**: Users can register new accounts, log in securely, and log out via the settings menu.
 
 ### Testing on Multiple Devices
-1. Install the APK (`release/app-debug.apk`) or run the app on your primary device/emulator.
+1. Install the APK from the [latest release](https://github.com/gillersja1/CollectorsTrackingApp/releases/tag/latest) (rebuilt automatically after every passing CI run on `main`) or run the app on your primary device/emulator.
 2. Register a new account on Device A.
 3. Log out on Device A, then log in using those same credentials on Device B (physical phone or second emulator) to verify cross-device authentication.
 

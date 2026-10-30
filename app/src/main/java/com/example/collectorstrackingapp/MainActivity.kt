@@ -130,7 +130,11 @@ class MainActivity : AppCompatActivity() {
 
             ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                // Edge-to-edge turns off the automatic resize for the keyboard, so make room
+                // for it here. Otherwise the keyboard covers the lower fields on the item screen.
+                val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+                val bottom = maxOf(systemBars.bottom, keyboard.bottom)
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottom)
                 insets
             }
             setSupportActionBar(binding.toolbar)
@@ -139,7 +143,10 @@ class MainActivity : AppCompatActivity() {
                 supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
             val navController = navHostFragment.navController
 
-            appBarConfiguration = AppBarConfiguration(navController.graph)
+            // Home and Login are both top-level screens, so neither shows a back arrow.
+            // Previously only Login (the graph's start) counted, so Home got an arrow
+            // that went back to the login screen.
+            appBarConfiguration = AppBarConfiguration(setOf(R.id.FirstFragment, R.id.LoginFragment))
             setupActionBarWithNavController(navController, appBarConfiguration)
 
             binding.fab.setOnClickListener {

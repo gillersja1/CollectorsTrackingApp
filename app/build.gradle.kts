@@ -19,8 +19,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        // A shared debug key, committed on purpose: CI and Android Studio sign debug
+        // builds with the same key, so a CI-built APK installs over a local build
+        // (and vice versa) without uninstalling, which deletes the app's local data.
+        // Debug keys aren't secret; never use this one for a Play Store release.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             // Generates a JaCoCo report via createDebugUnitTestCoverageReport.
             enableUnitTestCoverage = true
         }

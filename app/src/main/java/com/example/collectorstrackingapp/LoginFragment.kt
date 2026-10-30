@@ -55,6 +55,14 @@ class LoginFragment : Fragment() {
             null
         }
 
+        // Firebase keeps the user signed in between launches, so skip the login
+        // screen when they already are. Only Logout should send them back here.
+        val alreadySignedIn = try { auth?.currentUser != null } catch (_: Exception) { false }
+        if (alreadySignedIn) {
+            findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
+            return
+        }
+
         binding.passwordEditText.setOnEditorActionListener { _, actionId, event ->
             val isActionValid = actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
                                 actionId == android.view.inputmethod.EditorInfo.IME_ACTION_GO ||
