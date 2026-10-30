@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.collectorstrackingapp.data.AppDatabase
 import com.example.collectorstrackingapp.data.CollectibleRepository
 import com.example.collectorstrackingapp.data.FirebaseSyncManager
+import com.example.collectorstrackingapp.data.ImagePaths
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,7 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
                                 repository.insert(item)
                             }
                             repairSyncOnce()
+                            uploadLocalImages()
                         } catch (_: Exception) {}
                     }
                 }
@@ -85,6 +87,26 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
         prefs.edit().putBoolean(key, true).apply()
     }
 
+    /**
+     * Uploads any photo still stored only on this phone and points the item at the cloud
+     * copy. Runs every launch, so photos saved offline, or before photo upload worked,
+     * get uploaded once they can be. Photos whose file is gone are left as they are.
+     */
+    private suspend fun uploadLocalImages() {
+        if (syncManager.currentUserId == null) return
+        for (item in repository.getAllNow()) {
+            val path = item.imagePath
+            if (!ImagePaths.isLocal(path)) continue
+            val url = syncManager.uploadImageAndGetUrl(path!!)
+            if (url == path) continue // upload failed or file missing; try again next launch
+            // Re-read so an edit made during the upload isn't overwritten.
+            val current = repository.getAllNow().firstOrNull { it.id == item.id && it.imagePath == path } ?: continue
+            val updated = current.copy(imagePath = url)
+            repository.insert(updated)
+            syncManager.syncCollectibleInsert(updated)
+        }
+    }
+
     fun getCollectible(id: Int): LiveData<Collectible> {
         return repository.getCollectible(id).asLiveData()
     }
@@ -96,11 +118,11 @@ class CollectibleViewModel(application: Application) : AndroidViewModel(applicat
     fun insert(collectible: Collectible) = viewModelScope.launch(Dispatchers.IO) {
         var finalCollectible = collectible
         try {
-            if (!collectible.imagePath.isNullOrEmpty() && (collectible.imagePath.startsWith("content://") || collectible.imagePath.startsWith("file://"))) {
-                val cloudUrl = syncManager.uploadImageAndGetUrl(collectible.imagePath)
-                if (cloudUrl != null) {
-                    finalCollectible = collectible.copy(imagePath = cloudUrl)
-                }
+            if (ImagePaths.isLocal(collectible.imagePath)) {
+                // Store the cloud URL so the photo survives a reinstall and shows on other
+                // devices. If the upload fails (e.g. offline) the local path is kept and
+                // uploadLocalImages() retries on the next launch.
+                finalCollectible = collectible.copy(imagePath = syncManager.uploadImageAndGetUrl(collectible.imagePath!!))
             }
         } catch (_: Exception) {}
         // Save locally first so a new item gets its real id, then upload under that id.

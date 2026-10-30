@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.io.File
 import java.util.UUID
 
 /**
@@ -58,10 +59,18 @@ class FirebaseSyncManager(private val context: Context) {
         return try {
             val uid = userId ?: return imageUriString
             val st = storage ?: return imageUriString
-            if (!imageUriString.startsWith("content://") && !imageUriString.startsWith("file://")) {
+            if (!ImagePaths.isLocal(imageUriString)) {
                 return imageUriString
             }
-            val uri = Uri.parse(imageUriString)
+            // The item screen copies picked photos into app storage and saves the plain
+            // path, which the old check skipped, so no photo was ever uploaded.
+            val uri = if (imageUriString.startsWith("/")) {
+                val file = File(imageUriString)
+                if (!file.exists()) return imageUriString
+                Uri.fromFile(file)
+            } else {
+                Uri.parse(imageUriString)
+            }
             val fileName = "collectibles_${UUID.randomUUID()}.jpg"
             val ref = st.reference.child("users/$uid/images/$fileName")
 
