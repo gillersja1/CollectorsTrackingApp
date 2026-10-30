@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# One build per branch at a time: a newer push cancels the older run, so an older
+# build can never finish last and overwrite the "latest" APK with older code.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
