@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import coil.load
 import com.example.collectorstrackingapp.databinding.FragmentSecondBinding
@@ -19,6 +20,9 @@ import com.example.collectorstrackingapp.viewmodel.CollectibleViewModel
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -234,7 +238,7 @@ class SecondFragment : Fragment() {
             .addOnSuccessListener { barcode ->
                 val rawValue = barcode.rawValue
                 if (!rawValue.isNullOrEmpty()) {
-                    handleScannedData(rawValue)
+                    fetchProductFromCloud(rawValue)
                 } else {
                     Toast.makeText(context, "Scanned code was empty", Toast.LENGTH_SHORT).show()
                 }
@@ -246,6 +250,65 @@ class SecondFragment : Fragment() {
                 val errorMsg = e.localizedMessage ?: e.message ?: "Unknown error"
                 Toast.makeText(context, "Scan failed: $errorMsg. Ensure Google Play Services is up to date.", Toast.LENGTH_LONG).show()
             }
+    }
+
+    private fun fetchProductFromCloud(barcode: String) {
+        view?.let {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val url = java.net.URL("https://world.openfoodfacts.org/api/v0/product/$barcode.json")
+                    val connection = url.openConnection() as java.net.HttpURLConnection
+                    connection.requestMethod = "GET"
+                    connection.connectTimeout = 5000
+                    connection.readTimeout = 5000
+
+                    if (connection.responseCode == 200) {
+                        val responseString = connection.inputStream.bufferedReader().use { it.readText() }
+                        val json = JSONObject(responseString)
+                        if (json.optInt("status", 0) == 1) {
+                            val product = json.getJSONObject("product")
+                            val productName = product.optString("product_name").takeIf { it.isNotBlank() }
+                            val categories = product.optString("categories").takeIf { it.isNotBlank() }
+                            val imageUrl = product.optString("image_url").takeIf { it.isNotBlank() }
+                            val ingredients = product.optString("ingredients_text").takeIf { it.isNotBlank() }
+
+                            withContext(Dispatchers.Main) {
+                                if (_binding != null) {
+                                    productName?.let { binding.editTextName.setText(it) }
+                                    categories?.let { 
+                                        val firstCat = it.split(",").firstOrNull()?.trim() ?: it
+                                        binding.autoCompleteCategory.setText(firstCat, false)
+                                    }
+                                    ingredients?.let { binding.editTextDescription.setText(it) }
+                                    imageUrl?.let {
+                                        selectedImageUri = it
+                                        binding.imageViewPreview.load(it) {
+                                            crossfade(true)
+                                            placeholder(R.drawable.ic_collectible_placeholder)
+                                            error(R.drawable.ic_collectible_placeholder)
+                                        }
+                                    }
+                                    Toast.makeText(context, "Product auto-filled from cloud database!", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                handleScannedData(barcode)
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            handleScannedData(barcode)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        handleScannedData(barcode)
+                    }
+                }
+            }
+        }
     }
 
     private fun handleScannedData(rawText: String) {
