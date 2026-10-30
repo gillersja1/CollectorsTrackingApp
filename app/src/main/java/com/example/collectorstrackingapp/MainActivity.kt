@@ -130,7 +130,11 @@ class MainActivity : AppCompatActivity() {
 
             ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                // Edge-to-edge turns off the automatic resize for the keyboard, so make room
+                // for it here. Otherwise the keyboard covers the lower fields on the item screen.
+                val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+                val bottom = maxOf(systemBars.bottom, keyboard.bottom)
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, bottom)
                 insets
             }
             setSupportActionBar(binding.toolbar)
