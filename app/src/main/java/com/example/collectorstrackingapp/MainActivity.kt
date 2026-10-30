@@ -143,7 +143,10 @@ class MainActivity : AppCompatActivity() {
                 supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment
             val navController = navHostFragment.navController
 
-            appBarConfiguration = AppBarConfiguration(navController.graph)
+            // Home and Login are both top-level screens, so neither shows a back arrow.
+            // Previously only Login (the graph's start) counted, so Home got an arrow
+            // that went back to the login screen.
+            appBarConfiguration = AppBarConfiguration(setOf(R.id.FirstFragment, R.id.LoginFragment))
             setupActionBarWithNavController(navController, appBarConfiguration)
 
             binding.fab.setOnClickListener {
