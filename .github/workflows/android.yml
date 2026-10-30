@@ -30,6 +30,14 @@ jobs:
     - name: Run unit tests with coverage
       # Includes Robolectric-based Room tests, which run on the JVM.
       run: ./gradlew testDebugUnitTest createDebugUnitTestCoverageReport
+    - name: Send test results to Grafana
+      if: always()
+      uses: gillersja1/test-results-otel@v1
+      with:
+        results: app/build/test-results/testDebugUnitTest/*.xml
+        suite: unit
+        otlp-endpoint: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+        otlp-headers: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
     - name: Upload test and coverage reports
       if: always()
       uses: actions/upload-artifact@v5
