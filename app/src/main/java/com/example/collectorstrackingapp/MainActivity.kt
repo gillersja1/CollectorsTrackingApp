@@ -16,6 +16,7 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.collectorstrackingapp.databinding.ActivityMainBinding
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -204,6 +205,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Deleting an account asks for the password first (Firebase only deletes an account that signed in
+     * recently), then deletes the cloud collection and photos, then the sign-in, then this phone's copy.
+     * If a step fails nothing after it happens, and the message says what's left.
+     */
+    private fun confirmDeleteAccount(navController: androidx.navigation.NavController) {
+        val password = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            hint = "Your password"
+            contentDescription = "Password to confirm account deletion"
+        }
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Delete Account")
+            .setMessage("This permanently deletes your account, your whole collection and its photos in the cloud, and everything on this phone. It can't be undone.\n\nEnter your password to confirm.")
+            .setView(password)
+            .setPositiveButton("Delete") { _, _ ->
+                val sync = com.example.collectorstrackingapp.data.SyncEngine.get(this)
+                val deletion = com.example.collectorstrackingapp.data.AccountDeletion(
+                    account = com.example.collectorstrackingapp.data.FirebaseAccountService(),
+                    cloud = com.example.collectorstrackingapp.data.FirebaseSyncManager(applicationContext),
+                    clearPhone = {
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                        sync.signedOut().join()
+                    },
+                )
+                Toast.makeText(this, "Deleting your account…", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val result = withContext(Dispatchers.IO) { deletion.delete(password.text.toString()) }
+                    val message = when (result) {
+                        com.example.collectorstrackingapp.data.AccountDeletion.Result.Deleted -> "Your account and all its data are deleted."
+                        com.example.collectorstrackingapp.data.AccountDeletion.Result.WrongPassword -> "That password didn't work, so nothing was deleted."
+                        com.example.collectorstrackingapp.data.AccountDeletion.Result.CloudDataKept -> "Couldn't delete your cloud data (are you online?). Nothing was deleted; try again."
+                        com.example.collectorstrackingapp.data.AccountDeletion.Result.SignInKept -> "Your cloud data is deleted, but the account itself couldn't be. Try again to finish."
+                    }
+                    Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                    if (result == com.example.collectorstrackingapp.data.AccountDeletion.Result.Deleted) {
+                        getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE).edit()
+                            .putBoolean("is_logged_in", false).apply()
+                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
      * This hook is called whenever an item in your options menu is selected.
      *
      * @param item The menu item that was selected.
@@ -232,31 +279,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_delete_account -> {
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle("Delete Account")
-                    .setMessage("Are you sure you want to permanently delete your account and all local data? This action cannot be undone.")
-                    .setPositiveButton("Delete") { _, _ ->
-                        try {
-                            val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
-                            user?.delete()?.addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(this, "Failed to delete account: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                            com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                            // Empties this phone's copy and lets the next sign-in pull its collection.
-                            com.example.collectorstrackingapp.data.SyncEngine.get(this).signedOut()
-                        } catch (e: Exception) {
-                            android.util.Log.e("CollectorsApp", "Unexpected error", e)
-                        }
-                        val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
-                        sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
-                        navController.navigate(R.id.action_FirstFragment_to_LoginFragment)
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
+                confirmDeleteAccount(navController)
                 true
             }
             R.id.action_logout -> {

@@ -115,6 +115,23 @@ class FirebaseSyncManager(private val context: Context) : CloudSync {
         ref.downloadUrl.await().toString()
     }
 
+    override suspend fun deleteEverything(): Boolean = attempt("delete the account's cloud data", false) {
+        val uid = currentUserId ?: return@attempt false
+        for (name in listOf(COLLECTIBLES, CATEGORIES)) {
+            val docs = userCollection(name)!!.get().await().documents
+            // A batch holds at most 500 writes.
+            for (chunk in docs.chunked(450)) {
+                val batch = FirebaseFirestore.getInstance().batch()
+                chunk.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+        }
+        FirebaseFirestore.getInstance().collection("users").document(uid).delete().await()
+        val images = FirebaseStorage.getInstance().reference.child("users/$uid/images").listAll().await()
+        images.items.forEach { it.delete().await() }
+        true
+    }
+
     private fun toCollectible(doc: DocumentSnapshot): Collectible? = try {
         Collectible(
             // Items from older builds have no cloudId field; their document id is it.
