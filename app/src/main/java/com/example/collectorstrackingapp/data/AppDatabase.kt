@@ -67,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                 try {
                     db.execSQL("INSERT INTO categories (name) VALUES ('FunkoPop')")
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e("CollectorsApp", "Unexpected error", e)
                 }
             }
         }

@@ -124,20 +124,29 @@ class MainActivity : AppCompatActivity() {
      * recently supplied in [onSaveInstanceState]. **Note: Otherwise it is null.**
      */
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Global uncaught exception handler to display any crash stack trace directly on the phone screen
-        Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
-            throwable.printStackTrace()
-            try {
-                runOnUiThread {
-                    setContentView(android.widget.TextView(this).apply {
-                        text = "CRASH CAUGHT:\n${throwable.message}\n\n${throwable.stackTraceToString()}"
-                        textSize = 12f
-                        setPadding(24, 24, 24, 24)
-                        setTextColor(android.graphics.Color.RED)
-                        setBackgroundColor(android.graphics.Color.WHITE)
-                    })
+        // Debug builds only: show a crash's stack trace on the phone screen, handy when testing on a device.
+        // Release builds never show it to users; their crashes go on to the app-wide handler, which logs
+        // them and lets Android end the app and record the crash.
+        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        if (debuggable) {
+            val next = Thread.getDefaultUncaughtExceptionHandler()
+            Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+                android.util.Log.e("CollectorsApp", "Crash on ${thread.name}", throwable)
+                try {
+                    runOnUiThread {
+                        setContentView(android.widget.TextView(this).apply {
+                            text = "CRASH CAUGHT (debug build):\n${throwable.message}\n\n${throwable.stackTraceToString()}"
+                            textSize = 12f
+                            setPadding(24, 24, 24, 24)
+                            setTextColor(android.graphics.Color.RED)
+                            setBackgroundColor(android.graphics.Color.WHITE)
+                        })
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("CollectorsApp", "Couldn't show the crash", e)
+                    next?.uncaughtException(thread, throwable)
                 }
-            } catch (_: Exception) {}
+            }
         }
 
         try {
@@ -174,7 +183,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CollectorsApp", "Unexpected error", e)
             setContentView(android.widget.TextView(this).apply {
                 text = "Startup Error: ${e.message}\n\n${e.stackTraceToString()}"
                 textSize = 14f
@@ -283,7 +292,7 @@ class MainActivity : AppCompatActivity() {
                             // Empties this phone's copy and lets the next sign-in pull its collection.
                             com.example.collectorstrackingapp.data.SyncEngine.get(this).signedOut()
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            android.util.Log.e("CollectorsApp", "Unexpected error", e)
                         }
                         val sharedPrefs = getSharedPreferences("AuthPrefs", android.content.Context.MODE_PRIVATE)
                         sharedPrefs.edit().putBoolean("is_logged_in", false).apply()

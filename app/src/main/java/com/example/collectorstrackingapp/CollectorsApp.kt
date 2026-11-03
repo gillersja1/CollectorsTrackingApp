@@ -13,9 +13,12 @@ class CollectorsApp : Application() {
         super.onCreate()
         Log.d(TAG, "CollectorsApp onCreate started")
 
+        // Log the crash, then hand it on: the system's own handler ends the process and records the
+        // crash. Swallowing it here left a dead app running and hid crashes from Android's reports.
+        val systemHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Log.e(TAG, "FATAL UNCAUGHT EXCEPTION on thread ${thread.name}", throwable)
-            throwable.printStackTrace()
+            systemHandler?.uncaughtException(thread, throwable)
         }
 
         try {

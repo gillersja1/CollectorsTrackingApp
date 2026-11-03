@@ -7,12 +7,12 @@ plugins {
 
 android {
     namespace = "com.example.collectorstrackingapp"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.collectorstrackingapp"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 2
         versionName = "1.1"
 
@@ -60,6 +60,13 @@ android {
         // they go in debug; release builds never include them.
         getByName("debug").assets.srcDir("$projectDir/schemas")
         getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+    lint {
+        // Existing findings are recorded in lint-baseline.xml; anything new fails the build.
+        baseline = file("lint-baseline.xml")
+        abortOnError = true
+        htmlReport = true
+        xmlReport = true
     }
     testOptions {
         // Lets Robolectric-based tests (e.g. Room DAO tests) run on the JVM.

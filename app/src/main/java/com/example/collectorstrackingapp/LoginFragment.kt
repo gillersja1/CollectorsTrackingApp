@@ -124,7 +124,7 @@ class LoginFragment : Fragment() {
                         try {
                             findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            android.util.Log.e("CollectorsApp", "Unexpected error", e)
                         }
                     } else {
                         Toast.makeText(requireContext(), "Authentication failed: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()
@@ -175,7 +175,7 @@ class LoginFragment : Fragment() {
                         try {
                             findNavController().navigate(R.id.action_LoginFragment_to_FirstFragment)
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            android.util.Log.e("CollectorsApp", "Unexpected error", e)
                         }
                     } else {
                         Toast.makeText(requireContext(), "Registration failed: ${task.exception?.localizedMessage}", Toast.LENGTH_LONG).show()

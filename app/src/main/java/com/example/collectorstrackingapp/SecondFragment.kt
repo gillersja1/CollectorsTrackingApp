@@ -207,7 +207,7 @@ class SecondFragment : Fragment() {
             }
             file.absolutePath
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CollectorsApp", "Unexpected error", e)
             null
         }
     }
@@ -311,7 +311,7 @@ class SecondFragment : Fragment() {
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e("CollectorsApp", "Unexpected error", e)
                     withContext(Dispatchers.Main) {
                         handleScannedData(barcode)
                     }
