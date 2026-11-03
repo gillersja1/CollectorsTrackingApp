@@ -34,6 +34,19 @@ class CollectibleRepository(
 
     fun getAllNow(): List<Collectible> = collectibleDao.getAllNow()
 
+    fun getByCloudId(cloudId: String): Collectible? = collectibleDao.getByCloudId(cloudId)
+
+    /**
+     * Marks [uploaded] as safely in the cloud, but only if the row still holds exactly what was
+     * uploaded: an edit made while the upload was in flight stays unsynced, so it's sent next time.
+     */
+    fun markSyncedIfUnchanged(uploaded: Collectible): Boolean {
+        val current = collectibleDao.getByCloudId(uploaded.cloudId) ?: return false
+        if (current.copy(synced = false) != uploaded.copy(synced = false)) return false
+        collectibleDao.markSynced(current.id)
+        return true
+    }
+
     /**
      * Deletes copies of the same item, keeping the oldest row (lowest id).
      * Two rows are copies when every field except the id matches; the old
@@ -43,7 +56,7 @@ class CollectibleRepository(
      */
     fun removeDuplicates(): List<Collectible> {
         val removed = collectibleDao.getAllNow()
-            .groupBy { it.copy(id = 0) }
+            .groupBy { it.copy(id = 0, cloudId = "", synced = false) }
             .values
             .flatMap { copies -> copies.drop(1) }
         removed.forEach { collectibleDao.delete(it) }

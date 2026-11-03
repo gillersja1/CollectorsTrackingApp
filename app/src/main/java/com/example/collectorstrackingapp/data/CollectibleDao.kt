@@ -35,4 +35,10 @@ interface CollectibleDao {
 
     @Delete
     fun delete(collectible: Collectible)
+
+    @Query("SELECT * FROM collectibles WHERE cloudId = :cloudId LIMIT 1")
+    fun getByCloudId(cloudId: String): Collectible?
+
+    @Query("UPDATE collectibles SET synced = 1 WHERE id = :id")
+    fun markSynced(id: Int)
 }

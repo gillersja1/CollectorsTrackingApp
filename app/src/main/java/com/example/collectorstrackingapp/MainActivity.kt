@@ -49,6 +49,10 @@ class MainActivity : AppCompatActivity() {
                             put("description", item.description)
                             put("imagePath", item.imagePath ?: "")
                             put("timestamp", item.timestamp)
+                            put("isWishlist", item.isWishlist)
+                            put("estimatedValue", item.estimatedValue)
+                            put("tags", item.tags)
+                            put("cloudId", item.cloudId)
                         }
                         jsonArray.put(obj)
                     }
@@ -72,18 +76,32 @@ class MainActivity : AppCompatActivity() {
                     val jsonString = inputStream.bufferedReader().use { it.readText() }
                     val jsonArray = JSONArray(jsonString)
                     val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
+                    val sync = com.example.collectorstrackingapp.data.SyncEngine.get(this)
                     CoroutineScope(Dispatchers.IO).launch {
                         for (i in 0 until jsonArray.length()) {
                             val obj = jsonArray.getJSONObject(i)
-                            val item = com.example.collectorstrackingapp.model.Collectible(
-                                id = obj.optInt("id", 0),
+                            // An item already on this phone (same cloud id) is updated in place. Anything
+                            // else is added as a new item: the file's "id" is another phone's row number,
+                            // and reusing it used to overwrite whatever item had that number here.
+                            val cloudId = obj.optString("cloudId").takeIf { it.isNotBlank() }
+                            val existing = cloudId?.let { db.collectibleDao().getByCloudId(it) }
+                            val fields = com.example.collectorstrackingapp.model.Collectible(
                                 name = obj.getString("name"),
                                 category = obj.getString("category"),
                                 description = obj.getString("description"),
                                 imagePath = obj.optString("imagePath").takeIf { !it.isNullOrEmpty() },
-                                timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                                timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                                isWishlist = obj.optBoolean("isWishlist", false),
+                                estimatedValue = obj.optDouble("estimatedValue", 0.0),
+                                tags = obj.optString("tags", "")
                             )
-                            db.collectibleDao().insert(item)
+                            val item = when {
+                                existing != null -> fields.copy(id = existing.id, cloudId = existing.cloudId)
+                                cloudId != null -> fields.copy(cloudId = cloudId)
+                                else -> fields
+                            }
+                            // Through the sync engine, so imported items reach the cloud too.
+                            sync.save(item).join()
                         }
                         withContext(Dispatchers.Main) {
                             Toast.makeText(this@MainActivity, "Collection imported successfully!", Toast.LENGTH_LONG).show()
@@ -219,10 +237,8 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
                             com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                            val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
-                            CoroutineScope(Dispatchers.IO).launch {
-                                db.clearAllTables()
-                            }
+                            // Empties this phone's copy and lets the next sign-in pull its collection.
+                            com.example.collectorstrackingapp.data.SyncEngine.get(this).signedOut()
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
@@ -241,10 +257,8 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton("Logout") { _, _ ->
                         try {
                             com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
-                            val db = com.example.collectorstrackingapp.data.AppDatabase.getDatabase(this)
-                            CoroutineScope(Dispatchers.IO).launch {
-                                db.clearAllTables()
-                            }
+                            // Empties this phone's copy and lets the next sign-in pull its collection.
+                            com.example.collectorstrackingapp.data.SyncEngine.get(this).signedOut()
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
