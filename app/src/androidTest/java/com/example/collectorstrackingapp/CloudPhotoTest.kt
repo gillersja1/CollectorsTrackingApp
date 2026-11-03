@@ -84,7 +84,7 @@ class CloudPhotoTest {
         val cached = CloudPhotos.cacheFile(context, id)
         cached.delete()
         val shown = context.imageLoader.execute(ImageRequest.Builder(context).data(path).memoryCacheKey(null as String?).build())
-        assertTrue("Coil couldn't show $path: $shown", shown is SuccessResult)
+        assertTrue("Coil couldn't show $path: ${(shown as? coil.request.ErrorResult)?.throwable?.stackTraceToString()?.take(1500)}", shown is SuccessResult)
         assertTrue("the downloaded copy is kept", cached.exists())
 
         // Gone.
