@@ -22,3 +22,7 @@ local.properties
 # Built APKs are published as GitHub Releases by CI, not committed
 /release/
 *.apk
+
+# Firebase rules tests
+firebase/node_modules/
+*-debug.log
