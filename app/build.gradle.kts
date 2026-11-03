@@ -54,10 +54,22 @@ android {
     buildFeatures {
         viewBinding = true
     }
+    sourceSets {
+        // Room's exported schemas, so migration tests can build each old version of the database.
+        // Robolectric (the JVM unit tests) reads the debug build's assets, not test-only ones, so
+        // they go in debug; release builds never include them.
+        getByName("debug").assets.srcDir("$projectDir/schemas")
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
     testOptions {
         // Lets Robolectric-based tests (e.g. Room DAO tests) run on the JVM.
         unitTests.isIncludeAndroidResources = true
     }
+}
+
+ksp {
+    // Every database version's schema is saved here and committed, so migrations can be tested.
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
@@ -94,6 +106,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }

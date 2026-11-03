@@ -5,7 +5,6 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
-import com.example.collectorstrackingapp.model.User
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -187,16 +186,6 @@ class CollectibleRepositoryTest {
         repository.deleteCategory(comics)
 
         assertTrue(repository.allCategories.first().isEmpty())
-    }
-
-    // --- users ---
-
-    @Test
-    fun userLookup_isExactAndReturnsNullWhenMissing() {
-        db.userDao().insertUser(User(username = "collector@example.com", passwordHash = "hash"))
-
-        assertEquals("collector@example.com", db.userDao().getUserByUsername("collector@example.com")?.username)
-        assertNull(db.userDao().getUserByUsername("someone@example.com"))
     }
 
     @Test

@@ -2,93 +2,69 @@ package com.example.collectorstrackingapp.data
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.example.collectorstrackingapp.model.Category
 import com.example.collectorstrackingapp.model.Collectible
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.util.UUID
 
 /**
- * Manages synchronization of collectibles and categories with Cloud Firestore
- * and image uploads with Firebase Storage.
+ * The signed-in user's collection in Cloud Firestore (users/{uid}/collectibles and
+ * users/{uid}/categories) and their photos in Firebase Storage (users/{uid}/images).
+ * Failures are logged under the "CloudSync" tag and reported as false/null, never thrown.
  */
-class FirebaseSyncManager(private val context: Context) {
+class FirebaseSyncManager(private val context: Context) : CloudSync {
 
-    private val auth: FirebaseAuth?
-        get() = try { 
-            if (FirebaseApp.getApps(context).isNotEmpty()) {
-                FirebaseAuth.getInstance()
-            } else null
-        } catch (_: Exception) { null }
+    private val ready: Boolean
+        get() = FirebaseApp.getApps(context).isNotEmpty()
 
-    private val db: FirebaseFirestore?
-        get() = try { 
-            if (FirebaseApp.getApps(context).isNotEmpty()) {
-                FirebaseFirestore.getInstance()
-            } else null
-        } catch (_: Exception) { null }
+    override val currentUserId: String?
+        get() = if (ready) FirebaseAuth.getInstance().currentUser?.uid else null
 
-    private val storage: FirebaseStorage?
-        get() = try { 
-            if (FirebaseApp.getApps(context).isNotEmpty()) {
-                FirebaseStorage.getInstance()
-            } else null
-        } catch (_: Exception) { null }
+    private fun userCollection(name: String): CollectionReference? {
+        val uid = currentUserId ?: return null
+        return FirebaseFirestore.getInstance().collection("users").document(uid).collection(name)
+    }
 
-    private val userId: String?
-        get() = try { auth?.currentUser?.uid } catch (_: Exception) { null }
-
-    val currentUserId: String?
-        get() = userId
-
-    private val collectiblesRef
-        get() = try {
-            userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("collectibles") }
-        } catch (_: Exception) { null }
-
-    private val categoriesRef
-        get() = try {
-            userId?.let { uid -> db?.collection("users")?.document(uid)?.collection("categories") }
-        } catch (_: Exception) { null }
-
-    suspend fun uploadImageAndGetUrl(imageUriString: String): String {
-        return try {
-            val uid = userId ?: return imageUriString
-            val st = storage ?: return imageUriString
-            if (!ImagePaths.isLocal(imageUriString)) {
-                return imageUriString
-            }
-            // The item screen copies picked photos into app storage and saves the plain
-            // path, which the old check skipped, so no photo was ever uploaded.
-            val uri = if (imageUriString.startsWith("/")) {
-                val file = File(imageUriString)
-                if (!file.exists()) return imageUriString
-                Uri.fromFile(file)
-            } else {
-                Uri.parse(imageUriString)
-            }
-            val fileName = "collectibles_${UUID.randomUUID()}.jpg"
-            val ref = st.reference.child("users/$uid/images/$fileName")
-
-            ref.putFile(uri).await()
-            val downloadUrl = ref.downloadUrl.await()
-            downloadUrl.toString()
+    /** Runs [block], logging and swallowing anything except coroutine cancellation. */
+    private suspend fun <T> attempt(what: String, fallback: T, block: suspend () -> T): T =
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            e.printStackTrace()
-            imageUriString
+            Log.w(TAG, "$what failed", e)
+            fallback
+        }
+
+    override suspend fun fetchCollectibles(): List<Collectible>? = attempt("fetch collectibles", null) {
+        val ref = userCollection(COLLECTIBLES) ?: return@attempt null
+        ref.get().await().documents
+            // Older builds uploaded some new items as document "0"; that copy is never real.
+            .filter { it.id != "0" }
+            .mapNotNull(::toCollectible)
+    }
+
+    override suspend fun fetchCategories(): List<Category>? = attempt("fetch categories", null) {
+        val ref = userCollection(CATEGORIES) ?: return@attempt null
+        ref.get().await().documents.mapNotNull { doc ->
+            doc.getString("name")?.takeIf { it.isNotBlank() }?.let { Category(name = it) }
         }
     }
 
-    fun syncCollectibleInsert(collectible: Collectible) {
-        try {
-            val ref = collectiblesRef ?: return
-            val docId = collectible.id.toString()
+    override suspend fun upsertCollectible(collectible: Collectible): Boolean =
+        attempt("save ${collectible.cloudId}", false) {
+            val ref = userCollection(COLLECTIBLES) ?: return@attempt false
             val data = mapOf(
-                "id" to collectible.id,
+                "cloudId" to collectible.cloudId,
                 "name" to collectible.name,
                 "category" to collectible.category,
                 "description" to collectible.description,
@@ -98,95 +74,69 @@ class FirebaseSyncManager(private val context: Context) {
                 "estimatedValue" to collectible.estimatedValue,
                 "tags" to collectible.tags
             )
-            ref.document(docId).set(data).addOnFailureListener { 
-                // Suppress security/permission errors silently
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+            ref.document(collectible.cloudId).set(data).await()
+            true
         }
+
+    override suspend fun deleteCollectible(cloudId: String): Boolean = attempt("delete $cloudId", false) {
+        val ref = userCollection(COLLECTIBLES) ?: return@attempt false
+        ref.document(cloudId).delete().await()
+        true
     }
 
-    fun syncCollectibleDelete(collectible: Collectible) {
-        try {
-            val ref = collectiblesRef ?: return
-            ref.document(collectible.id.toString()).delete().addOnFailureListener {
-                // Suppress silently
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override suspend fun upsertCategory(category: Category): Boolean =
+        attempt("save category ${category.name}", false) {
+            val ref = userCollection(CATEGORIES) ?: return@attempt false
+            ref.document(category.name).set(mapOf("id" to category.id, "name" to category.name)).await()
+            true
         }
-    }
 
-    fun syncCategoryInsert(category: Category) {
-        try {
-            val ref = categoriesRef ?: return
-            val data = mapOf(
-                "id" to category.id,
-                "name" to category.name
-            )
-            ref.document(category.name).set(data).addOnFailureListener {
-                // Suppress silently
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override suspend fun deleteCategory(category: Category): Boolean =
+        attempt("delete category ${category.name}", false) {
+            val ref = userCollection(CATEGORIES) ?: return@attempt false
+            ref.document(category.name).delete().await()
+            true
         }
-    }
 
-    fun syncCategoryDelete(category: Category) {
-        try {
-            val ref = categoriesRef ?: return
-            ref.document(category.name).delete().addOnFailureListener {
-                // Suppress silently
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override suspend fun uploadImage(localPath: String): String? = attempt("upload $localPath", null) {
+        val uid = currentUserId ?: return@attempt null
+        if (!ImagePaths.isLocal(localPath)) return@attempt null
+        // The item screen copies picked photos into app storage and saves the plain path.
+        val uri = if (localPath.startsWith("/")) {
+            val file = File(localPath)
+            if (!file.exists()) return@attempt null
+            Uri.fromFile(file)
+        } else {
+            Uri.parse(localPath)
         }
+        val ref = FirebaseStorage.getInstance().reference
+            .child("users/$uid/images/collectibles_${UUID.randomUUID()}.jpg")
+        ref.putFile(uri).await()
+        ref.downloadUrl.await().toString()
     }
 
-    fun fetchRemoteCollectibles(onResult: (List<Collectible>) -> Unit) {
-        try {
-            val ref = collectiblesRef ?: return
-            ref.get().addOnSuccessListener { snapshot ->
-                try {
-                    val list = snapshot.documents.mapNotNull { doc ->
-                        try {
-                            val id = doc.getLong("id")?.toInt() ?: 0
-                            val name = doc.getString("name") ?: ""
-                            val category = doc.getString("category") ?: ""
-                            val description = doc.getString("description") ?: ""
-                            val imagePath = doc.getString("imagePath")
-                            val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
-                            val isWishlist = doc.getBoolean("isWishlist") ?: false
-                            val estimatedValue = doc.getDouble("estimatedValue") ?: 0.0
-                            val tags = doc.getString("tags") ?: ""
-                            Collectible(id = id, name = name, category = category, description = description, imagePath = imagePath, timestamp = timestamp, isWishlist = isWishlist, estimatedValue = estimatedValue, tags = tags)
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-                    onResult(list)
-                } catch (_: Exception) {}
-            }.addOnFailureListener {}
-        } catch (_: Exception) {}
+    private fun toCollectible(doc: DocumentSnapshot): Collectible? = try {
+        Collectible(
+            // Items from older builds have no cloudId field; their document id is it.
+            cloudId = doc.getString("cloudId")?.takeIf { it.isNotBlank() } ?: doc.id,
+            name = doc.getString("name") ?: "",
+            category = doc.getString("category") ?: "",
+            description = doc.getString("description") ?: "",
+            imagePath = doc.getString("imagePath")?.takeIf { it.isNotBlank() },
+            timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis(),
+            isWishlist = doc.getBoolean("isWishlist") ?: false,
+            estimatedValue = doc.getDouble("estimatedValue") ?: 0.0,
+            tags = doc.getString("tags") ?: "",
+            synced = true
+        )
+    } catch (e: Exception) {
+        Log.w(TAG, "skipping unreadable document ${doc.id}", e)
+        null
     }
 
-    fun fetchRemoteCategories(onResult: (List<Category>) -> Unit) {
-        try {
-            val ref = categoriesRef ?: return
-            ref.get().addOnSuccessListener { snapshot ->
-                try {
-                    val list = snapshot.documents.mapNotNull { doc ->
-                        try {
-                            val id = doc.getLong("id")?.toInt() ?: 0
-                            val name = doc.getString("name") ?: ""
-                            Category(id = id, name = name)
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-                    onResult(list)
-                } catch (_: Exception) {}
-            }.addOnFailureListener {}
-        } catch (_: Exception) {}
+    private companion object {
+        const val TAG = "CloudSync"
+        const val COLLECTIBLES = "collectibles"
+        const val CATEGORIES = "categories"
     }
 }

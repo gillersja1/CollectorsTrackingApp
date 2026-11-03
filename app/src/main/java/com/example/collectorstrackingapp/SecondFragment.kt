@@ -156,7 +156,16 @@ class SecondFragment : Fragment() {
             }
         }
 
-        val collectible = if (currentCollectibleId != -1) {
+        // Editing keeps the loaded item's cloud id, so the cloud copy is updated rather than duplicated.
+        val collectible = currentCollectible?.takeIf { it.id == currentCollectibleId }?.copy(
+            name = name,
+            category = category,
+            description = description,
+            imagePath = finalImagePath,
+            isWishlist = isWishlist,
+            estimatedValue = estimatedValue,
+            tags = tags
+        ) ?: if (currentCollectibleId != -1) {
             Collectible(
                 id = currentCollectibleId,
                 name = name,
