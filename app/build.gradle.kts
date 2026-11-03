@@ -16,7 +16,8 @@ android {
         versionCode = 2
         versionName = "1.1"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Points Firebase at the local emulators before any UI test runs (see FirebaseEmulatorRunner).
+        testInstrumentationRunner = "com.example.collectorstrackingapp.FirebaseEmulatorRunner"
     }
 
     signingConfigs {
@@ -116,6 +117,8 @@ dependencies {
     testImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
 }
 
 // Robolectric loads app classes through its own class loader; without these

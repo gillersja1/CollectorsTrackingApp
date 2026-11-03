@@ -102,3 +102,55 @@ jobs:
         suite: security-rules
         otlp-endpoint: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
         otlp-headers: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+
+  # The app end to end on an Android emulator, against the Firebase Auth and Firestore emulators
+  # (with this repo's security rules), so it never touches the real project.
+  ui-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v5
+    - name: Enable KVM, so the Android emulator runs at full speed
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+    - uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - uses: actions/setup-node@v5
+      with:
+        node-version: lts/*
+        cache: npm
+        cache-dependency-path: firebase/package-lock.json
+    - name: Install the Firebase emulators
+      working-directory: firebase
+      run: npm ci
+    - name: Build the app and its UI tests
+      run: chmod +x gradlew && ./gradlew assembleDebug assembleDebugAndroidTest
+    - name: Run the UI tests on an Android emulator
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 34
+        target: google_apis
+        arch: x86_64
+        disable-animations: true
+        emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+        script: cd firebase && npx firebase emulators:exec --project collectorsapp-90a46 --config ../firebase.json --only auth,firestore "cd .. && ./gradlew connectedDebugAndroidTest"
+    - name: Send test results to Grafana
+      if: always()
+      uses: gillersja1/test-results-otel@v1
+      with:
+        results: app/build/outputs/androidTest-results/connected/debug/*.xml
+        suite: ui
+        otlp-endpoint: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+        otlp-headers: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+    - name: Upload UI test reports
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: ui-test-reports
+        path: |
+          app/build/reports/androidTests/connected
+          app/build/outputs/androidTest-results/connected
