@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Each user's collection lives under users/{uid}: only that signed-in user can read or change it.
+// Everything else in the database is closed.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Field checks for a saved item: the shape the app writes, with sane sizes.
+    // cloudId is optional because builds before the cloud-id change didn't send it; when sent it must
+    // match the document id, so an item can't claim to be another one.
+    function validCollectible(id) {
+      let d = request.resource.data;
+      return d.name is string && d.name.size() <= 200
+        && d.category is string && d.category.size() <= 100
+        && d.description is string && d.description.size() <= 5000
+        && (!('cloudId' in d) || d.cloudId == id)
+        && (!('imagePath' in d) || (d.imagePath is string && d.imagePath.size() <= 2000))
+        && (!('tags' in d) || (d.tags is string && d.tags.size() <= 1000))
+        && (!('isWishlist' in d) || d.isWishlist is bool)
+        && (!('estimatedValue' in d) || d.estimatedValue is number);
+    }
+
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+
+      match /collectibles/{collectibleId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validCollectible(collectibleId);
+      }
+
+      match /categories/{categoryName} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.name == categoryName
+          && categoryName.size() <= 100;
+      }
+    }
+  }
+}
