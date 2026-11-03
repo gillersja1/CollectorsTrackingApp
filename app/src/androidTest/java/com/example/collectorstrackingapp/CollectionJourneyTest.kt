@@ -60,7 +60,7 @@ class CollectionJourneyTest {
         onView(withId(R.id.registerButton)).perform(click())
 
         // Home, then add an item.
-        waitFor(withId(R.id.recyclerView))
+        waitFor(homeScreen)
         onView(withId(R.id.fab)).perform(click())
         waitFor(withId(R.id.editTextName))
         onView(withId(R.id.editTextName)).perform(replaceText(itemName))
@@ -79,7 +79,7 @@ class CollectionJourneyTest {
         waitFor(withId(R.id.button_delete))
         onView(withId(R.id.button_delete)).perform(click())
         onView(withText("Delete")).perform(click())
-        waitFor(withId(R.id.recyclerView))
+        waitFor(homeScreen)
         eventually { if (cloudItems(uid).isEmpty()) true else null }
         onView(withText(itemName)).check(doesNotExist())
 
@@ -101,6 +101,9 @@ class CollectionJourneyTest {
         onView(withId(R.id.loginButton)).check(matches(isDisplayed()))
         assertEquals(null, FirebaseAuth.getInstance().currentUser)
     }
+
+    /** The home screen's stats heading: always shown, unlike the list, which has no height while empty. */
+    private val homeScreen = withId(R.id.textViewStatsTitle)
 
     private fun cloudItems(uid: String): List<Map<String, Any?>> =
         Tasks.await(FirebaseFirestore.getInstance().collection("users").document(uid).collection("collectibles").get(), 10, TimeUnit.SECONDS)
