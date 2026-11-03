@@ -199,8 +199,54 @@ class SyncEngineTest {
         val a = phone()
         runBlocking { a.engine.save(item("Batman").copy(imagePath = "/data/photos/batman.jpg")).join() }
 
-        assertEquals("https://cloud/batman.jpg", a.items().single().imagePath)
-        assertEquals("https://cloud/batman.jpg", cloud.items.values.single().imagePath)
+        assertEquals("firestore-photo://batman", a.items().single().imagePath)
+        assertEquals("firestore-photo://batman", cloud.items.values.single().imagePath)
+        assertEquals(setOf("firestore-photo://batman"), cloud.photos)
+    }
+
+    @Test
+    fun deletingAnItemDeletesItsPhotoFromTheCloud() {
+        val a = phone()
+        runBlocking { a.engine.save(item("Batman").copy(imagePath = "/data/photos/batman.jpg")).join() }
+
+        runBlocking { a.engine.delete(a.items().single()).join() }
+
+        assertTrue(cloud.photos.isEmpty())
+    }
+
+    @Test
+    fun replacingAPhotoDeletesTheOldOneFromTheCloud() {
+        val a = phone()
+        runBlocking { a.engine.save(item("Batman").copy(imagePath = "/data/photos/front.jpg")).join() }
+
+        runBlocking { a.engine.save(a.items().single().copy(imagePath = "/data/photos/back.jpg")).join() }
+
+        assertEquals(setOf("firestore-photo://back"), cloud.photos)
+        assertEquals("firestore-photo://back", a.items().single().imagePath)
+    }
+
+    @Test
+    fun editingAnItemKeepsItsPhoto() {
+        val a = phone()
+        runBlocking { a.engine.save(item("Batman").copy(imagePath = "/data/photos/front.jpg")).join() }
+
+        runBlocking { a.engine.save(a.items().single().copy(name = "Batman (1989)")).join() }
+
+        assertEquals(setOf("firestore-photo://front"), cloud.photos)
+    }
+
+    @Test
+    fun aPhotoThatCouldntUploadStaysOnThePhoneAndGoesUpOnTheNextSync() {
+        val a = phone()
+        cloud.offline = true
+        runBlocking { a.engine.save(item("Batman").copy(imagePath = "/data/photos/batman.jpg")).join() }
+        assertEquals("/data/photos/batman.jpg", a.items().single().imagePath)
+        cloud.offline = false
+
+        a.pull()
+
+        assertEquals("firestore-photo://batman", a.items().single().imagePath)
+        assertEquals("firestore-photo://batman", cloud.items.values.single().imagePath)
     }
 
     @Test
@@ -263,8 +309,20 @@ class SyncEngineTest {
             return true
         }
 
-        override suspend fun uploadImage(localPath: String): String? =
-            if (offline) null else "https://cloud/" + localPath.substringAfterLast('/')
+        val photos = mutableSetOf<String>()
+
+        override suspend fun uploadImage(localPath: String): String? {
+            if (offline) return null
+            val path = CloudPhotos.pathFor(localPath.substringAfterLast('/').substringBefore('.'))
+            photos += path
+            return path
+        }
+
+        override suspend fun deletePhoto(path: String): Boolean {
+            if (offline) return false
+            photos -= path
+            return true
+        }
 
         override suspend fun deleteEverything(): Boolean {
             if (offline) return false

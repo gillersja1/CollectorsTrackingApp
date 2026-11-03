@@ -2,9 +2,13 @@ package com.example.collectorstrackingapp
 
 import android.app.Application
 import android.util.Log
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import com.example.collectorstrackingapp.data.CloudPhotoFetcher
+import com.example.collectorstrackingapp.data.FirebaseSyncManager
 import com.google.firebase.FirebaseApp
 
-class CollectorsApp : Application() {
+class CollectorsApp : Application(), ImageLoaderFactory {
     companion object {
         private const val TAG = "CollectorsApp"
     }
@@ -28,4 +32,9 @@ class CollectorsApp : Application() {
             Log.e(TAG, "FirebaseApp initialization failed", e)
         }
     }
+
+    /** Coil's image loader, taught to show photos stored in Firestore (`firestore-photo://...`). */
+    override fun newImageLoader(): ImageLoader = ImageLoader.Builder(this)
+        .components { add(CloudPhotoFetcher.Factory(this@CollectorsApp, FirebaseSyncManager(this@CollectorsApp))) }
+        .build()
 }

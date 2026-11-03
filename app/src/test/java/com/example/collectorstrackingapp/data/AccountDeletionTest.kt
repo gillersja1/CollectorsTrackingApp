@@ -35,6 +35,7 @@ class AccountDeletionTest {
         override suspend fun upsertCategory(category: Category) = false
         override suspend fun deleteCategory(category: Category) = false
         override suspend fun uploadImage(localPath: String): String? = null
+        override suspend fun deletePhoto(path: String) = false
         override suspend fun deleteEverything(): Boolean {
             steps += "delete cloud data"
             if (works) hasData = false

@@ -10,7 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.Blob
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import java.io.File
@@ -21,7 +21,7 @@ import java.util.UUID
  * users/{uid}/categories) and their photos in Firebase Storage (users/{uid}/images).
  * Failures are logged under the "CloudSync" tag and reported as false/null, never thrown.
  */
-class FirebaseSyncManager(private val context: Context) : CloudSync {
+class FirebaseSyncManager(private val context: Context) : CloudSync, PhotoSource {
 
     private val ready: Boolean
         get() = FirebaseApp.getApps(context).isNotEmpty()
@@ -98,8 +98,12 @@ class FirebaseSyncManager(private val context: Context) : CloudSync {
             true
         }
 
+    /**
+     * Shrinks the photo to fit one Firestore document and saves it at users/{uid}/photos/{id}, keeping the
+     * shrunk copy on this phone too. Returns `firestore-photo://{id}` for the item to point at.
+     */
     override suspend fun uploadImage(localPath: String): String? = attempt("upload $localPath", null) {
-        val uid = currentUserId ?: return@attempt null
+        val photos = userCollection(PHOTOS) ?: return@attempt null
         if (!ImagePaths.isLocal(localPath)) return@attempt null
         // The item screen copies picked photos into app storage and saves the plain path.
         val uri = if (localPath.startsWith("/")) {
@@ -109,15 +113,32 @@ class FirebaseSyncManager(private val context: Context) : CloudSync {
         } else {
             Uri.parse(localPath)
         }
-        val ref = FirebaseStorage.getInstance().reference
-            .child("users/$uid/images/collectibles_${UUID.randomUUID()}.jpg")
-        ref.putFile(uri).await()
-        ref.downloadUrl.await().toString()
+        val bytes = PhotoShrinker.shrink(context, uri) ?: return@attempt null
+        val id = UUID.randomUUID().toString()
+        photos.document(id).set(mapOf(
+            "data" to Blob.fromBytes(bytes),
+            "contentType" to "image/jpeg",
+            "createdAt" to System.currentTimeMillis(),
+        )).await()
+        CloudPhotos.cacheFile(context, id).writeBytes(bytes)
+        CloudPhotos.pathFor(id)
+    }
+
+    override suspend fun download(id: String): ByteArray? = attempt("download photo $id", null) {
+        userCollection(PHOTOS)?.document(id)?.get()?.await()?.getBlob("data")?.toBytes()
+    }
+
+    override suspend fun deletePhoto(path: String): Boolean = attempt("delete photo $path", false) {
+        if (!CloudPhotos.isCloudPhoto(path)) return@attempt true
+        val id = CloudPhotos.idOf(path)
+        userCollection(PHOTOS)?.document(id)?.delete()?.await() ?: return@attempt false
+        CloudPhotos.cacheFile(context, id).delete()
+        true
     }
 
     override suspend fun deleteEverything(): Boolean = attempt("delete the account's cloud data", false) {
         val uid = currentUserId ?: return@attempt false
-        for (name in listOf(COLLECTIBLES, CATEGORIES)) {
+        for (name in listOf(COLLECTIBLES, CATEGORIES, PHOTOS)) {
             val docs = userCollection(name)!!.get().await().documents
             // A batch holds at most 500 writes.
             for (chunk in docs.chunked(450)) {
@@ -127,8 +148,6 @@ class FirebaseSyncManager(private val context: Context) : CloudSync {
             }
         }
         FirebaseFirestore.getInstance().collection("users").document(uid).delete().await()
-        val images = FirebaseStorage.getInstance().reference.child("users/$uid/images").listAll().await()
-        images.items.forEach { it.delete().await() }
         true
     }
 
@@ -155,5 +174,6 @@ class FirebaseSyncManager(private val context: Context) : CloudSync {
         const val TAG = "CloudSync"
         const val COLLECTIBLES = "collectibles"
         const val CATEGORIES = "categories"
+        const val PHOTOS = "photos"
     }
 }

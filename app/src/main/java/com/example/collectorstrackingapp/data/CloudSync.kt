@@ -25,8 +25,11 @@ interface CloudSync {
 
     suspend fun deleteCategory(category: Category): Boolean
 
-    /** Uploads a photo stored on this phone; returns its cloud URL, or null if it couldn't. */
+    /** Uploads a photo stored on this phone; returns the path to its cloud copy, or null if it couldn't. */
     suspend fun uploadImage(localPath: String): String?
+
+    /** Deletes a photo uploaded by [uploadImage]; true for anything that isn't a cloud photo. */
+    suspend fun deletePhoto(path: String): Boolean
 
     /** Deletes the whole account's cloud data: every item, category and photo. True only if all of it went. */
     suspend fun deleteEverything(): Boolean

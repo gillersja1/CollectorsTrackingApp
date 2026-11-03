@@ -87,14 +87,19 @@ class SyncEngine(
 
     /** Saves [collectible] here, then in the cloud, uploading its photo first if it has a new one. */
     fun save(collectible: Collectible): Job = scope.launch {
+        val before = repository.getByCloudId(collectible.cloudId)?.imagePath
         val id = repository.insert(collectible.copy(synced = false))
         val saved = collectible.copy(id = id, synced = false)
-        push(withCloudPhoto(saved) ?: saved)
+        val final = withCloudPhoto(saved) ?: saved
+        push(final)
+        // A replaced or removed photo would otherwise sit in the cloud forever.
+        if (before != null && before != final.imagePath) cloud.deletePhoto(before)
     }
 
     fun delete(collectible: Collectible): Job = scope.launch {
         repository.delete(collectible)
         cloud.deleteCollectible(collectible.cloudId)
+        collectible.imagePath?.let { cloud.deletePhoto(it) }
     }
 
     fun saveCategory(category: Category): Job = scope.launch {
