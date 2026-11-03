@@ -8,6 +8,7 @@ import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
+import androidx.test.espresso.action.ViewActions.scrollTo
 import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -65,7 +66,7 @@ class CollectionJourneyTest {
         waitFor(withId(R.id.editTextName))
         onView(withId(R.id.editTextName)).perform(replaceText(itemName))
         onView(withId(R.id.autoCompleteCategory)).perform(replaceText("FunkoPop"), closeSoftKeyboard())
-        onView(withId(R.id.button_save)).perform(click())
+        onView(withId(R.id.button_save)).perform(scrollTo(), click())
 
         // It's in the list, and the sync engine sent it to the cloud under a random cloud id.
         waitFor(withText(itemName))
@@ -76,8 +77,8 @@ class CollectionJourneyTest {
 
         // Delete it: gone from the list and from the cloud.
         onView(withText(itemName)).perform(click())
-        waitFor(withId(R.id.button_delete))
-        onView(withId(R.id.button_delete)).perform(click())
+        waitFor(withId(R.id.editTextName))
+        onView(withId(R.id.button_delete)).perform(scrollTo(), click())
         onView(withText("Delete")).perform(click())
         waitFor(homeScreen)
         eventually { if (cloudItems(uid).isEmpty()) true else null }
