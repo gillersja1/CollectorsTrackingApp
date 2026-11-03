@@ -1,11 +1,11 @@
-// The security rules, checked against the Firestore and Storage emulators: each user can reach their own
-// collection and photos, nobody else's, and nothing outside users/{uid}.
+// The security rules, checked against the Firestore emulator: each user can reach their own collection and
+// photos, nobody else's, and nothing outside users/{uid}.
 // Run with `npm test` in this folder (it starts the emulators); see firebase/README.md.
 import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, describe, test } from 'node:test';
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
-import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage';
+import { Bytes } from 'firebase/firestore';
 
 let env;
 
@@ -13,7 +13,6 @@ before(async () => {
   env = await initializeTestEnvironment({
     projectId: 'demo-collectors',
     firestore: { rules: readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 8080 },
-    storage: { rules: readFileSync(new URL('../storage.rules', import.meta.url), 'utf8'), host: '127.0.0.1', port: 9199 },
   });
 });
 
@@ -23,7 +22,6 @@ after(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
-  await env.clearStorage();
 });
 
 const ada = () => env.authenticatedContext('ada');
@@ -120,34 +118,42 @@ describe('Firestore: a collection belongs to its owner', () => {
   });
 });
 
-describe('Storage: photos belong to their owner', () => {
-  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+describe('Firestore: photos belong to their owner', () => {
+  const photo = (bytes = 2000, extra = {}) => ({
+    data: Bytes.fromUint8Array(new Uint8Array(bytes)),
+    contentType: 'image/jpeg',
+    createdAt: 1,
+    ...extra,
+  });
 
-  test('a user can upload, read and delete their own photos', async () => {
-    const photo = ref(ada().storage(), 'users/ada/images/collectibles_1.jpg');
+  test('a user can save, read and delete their own photos', async () => {
+    const mine = doc(ada().firestore(), 'users/ada/photos/p1');
 
-    await assertSucceeds(uploadBytes(photo, jpeg, { contentType: 'image/jpeg' }));
-    await assertSucceeds(getBytes(photo));
-    await assertSucceeds(deleteObject(photo));
+    await assertSucceeds(setDoc(mine, photo()));
+    await assertSucceeds(getDoc(mine));
+    await assertSucceeds(deleteDoc(mine));
   });
 
   test("a user can't read, overwrite or delete someone else's photos", async () => {
-    await assertSucceeds(uploadBytes(ref(ada().storage(), 'users/ada/images/p.jpg'), jpeg, { contentType: 'image/jpeg' }));
-    const theirs = ref(grace().storage(), 'users/ada/images/p.jpg');
+    await seed('users/ada/photos/p1', photo());
+    const theirs = doc(grace().firestore(), 'users/ada/photos/p1');
 
-    await assertFails(getBytes(theirs));
-    await assertFails(uploadBytes(theirs, jpeg, { contentType: 'image/jpeg' }));
-    await assertFails(deleteObject(theirs));
+    await assertFails(getDoc(theirs));
+    await assertFails(setDoc(theirs, photo()));
+    await assertFails(deleteDoc(theirs));
   });
 
-  test('signed-out visitors and other paths are closed', async () => {
-    await assertFails(uploadBytes(ref(nobody().storage(), 'users/ada/images/p.jpg'), jpeg, { contentType: 'image/jpeg' }));
-    await assertFails(uploadBytes(ref(ada().storage(), 'public/p.jpg'), jpeg, { contentType: 'image/jpeg' }));
+  test('signed-out visitors get nothing', async () => {
+    await seed('users/ada/photos/p1', photo());
+
+    await assertFails(getDoc(doc(nobody().firestore(), 'users/ada/photos/p1')));
   });
 
-  test('only images, and nothing over 10 MB', async () => {
-    const storage = ada().storage();
-    await assertFails(uploadBytes(ref(storage, 'users/ada/images/notes.txt'), new Uint8Array([1, 2, 3]), { contentType: 'text/plain' }));
-    await assertFails(uploadBytes(ref(storage, 'users/ada/images/huge.jpg'), new Uint8Array(10 * 1024 * 1024 + 1), { contentType: 'image/jpeg' }));
+  test('only JPEG bytes, and nothing over 900 KB', async () => {
+    const db = ada().firestore();
+    await assertFails(setDoc(doc(db, 'users/ada/photos/big'), photo(900 * 1024 + 1)));
+    await assertFails(setDoc(doc(db, 'users/ada/photos/png'), photo(2000, { contentType: 'image/png' })));
+    await assertFails(setDoc(doc(db, 'users/ada/photos/text'), photo(2000, { data: 'not bytes' })));
+    await assertSucceeds(setDoc(doc(db, 'users/ada/photos/ok'), photo(700_000)));
   });
 });

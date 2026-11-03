@@ -48,8 +48,11 @@ An Android application designed to help collectors organize and track their coll
 
 ## Security rules
 
-The Firestore and Storage security rules are in [`firebase/`](firebase/README.md), with tests that run
-against the Firebase emulators in CI: each user can reach only their own collection and photos.
+The Firestore security rules are in [`firebase/`](firebase/README.md), with tests that run against the
+Firebase emulator in CI: each user can reach only their own collection and photos.
+
+Photos are stored in Firestore too (shrunk to at most 1024 pixels and 700 KB each), so the app runs on
+Firebase's free plan with no billing account.
 
 ## Testing
 

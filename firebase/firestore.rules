@@ -32,6 +32,16 @@ service cloud.firestore {
         allow create, update: if isOwner(uid) && validCollectible(collectibleId);
       }
 
+      // Photos, stored here instead of in Firebase Storage (which needs a billing account). The app shrinks
+      // each one to a JPEG of at most 700 KB; the cap here leaves room under Firestore's 1 MiB per document.
+      match /photos/{photoId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.data is bytes
+          && request.resource.data.data.size() <= 900 * 1024
+          && request.resource.data.contentType == 'image/jpeg';
+      }
+
       match /categories/{categoryName} {
         allow read, delete: if isOwner(uid);
         allow create, update: if isOwner(uid)
