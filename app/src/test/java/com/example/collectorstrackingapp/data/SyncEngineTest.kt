@@ -265,5 +265,12 @@ class SyncEngineTest {
 
         override suspend fun uploadImage(localPath: String): String? =
             if (offline) null else "https://cloud/" + localPath.substringAfterLast('/')
+
+        override suspend fun deleteEverything(): Boolean {
+            if (offline) return false
+            items.clear()
+            categories.clear()
+            return true
+        }
     }
 }
