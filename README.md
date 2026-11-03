@@ -46,6 +46,11 @@ An Android application designed to help collectors organize and track their coll
 - `app/src/main/res/`: Contains layout files, strings, and other resources.
 - `app/build.gradle.kts`: App-level build configuration.
 
+## Security rules
+
+The Firestore and Storage security rules are in [`firebase/`](firebase/README.md), with tests that run
+against the Firebase emulators in CI: each user can reach only their own collection and photos.
+
 ## Testing
 
 Unit tests run on the JVM, so they need no emulator and run on every push
