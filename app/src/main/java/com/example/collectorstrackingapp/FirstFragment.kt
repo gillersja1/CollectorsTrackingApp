@@ -47,7 +47,7 @@ class FirstFragment : Fragment() {
             try {
                 findNavController().navigate(R.id.action_FirstFragment_to_SecondFragment, bundle)
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("CollectorsApp", "Unexpected error", e)
             }
         }
         binding.recyclerView.adapter = adapter
@@ -63,7 +63,7 @@ class FirstFragment : Fragment() {
                     selectedSortOrder = sortOptions[position]
                     filterAndSortList(adapter)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    android.util.Log.e("CollectorsApp", "Unexpected error", e)
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
@@ -85,13 +85,13 @@ class FirstFragment : Fragment() {
                             selectedCategory = catNames[position]
                             filterAndSortList(adapter)
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            android.util.Log.e("CollectorsApp", "Unexpected error", e)
                         }
                     }
                     override fun onNothingSelected(parent: AdapterView<*>) {}
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("CollectorsApp", "Unexpected error", e)
             }
         }
 
@@ -104,7 +104,7 @@ class FirstFragment : Fragment() {
                     filterAndSortList(adapter)
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.e("CollectorsApp", "Unexpected error", e)
             }
         }
     }
@@ -127,7 +127,7 @@ class FirstFragment : Fragment() {
             }
             binding.textViewCategoryBreakdown.text = breakdownText
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CollectorsApp", "Unexpected error", e)
         }
     }
 
@@ -137,7 +137,7 @@ class FirstFragment : Fragment() {
 
             adapter.submitList(filtered)
         } catch (e: Exception) {
-            e.printStackTrace()
+            android.util.Log.e("CollectorsApp", "Unexpected error", e)
         }
     }
 

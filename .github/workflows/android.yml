@@ -46,6 +46,17 @@ jobs:
         path: |
           app/build/reports/tests/testDebugUnitTest
           app/build/reports/coverage/test/debug
+    - name: Lint
+      # Findings that predate this check are listed in app/lint-baseline.xml; a new one fails the build.
+      run: ./gradlew lintDebug
+    - name: Upload lint report
+      if: always()
+      uses: actions/upload-artifact@v5
+      with:
+        name: lint-report
+        path: |
+          app/build/reports/lint-results-debug.html
+          app/build/reports/lint-results-debug.sarif
     - name: Build Debug APK
       run: ./gradlew assembleDebug
     - name: Publish APK to the "latest" GitHub Release
