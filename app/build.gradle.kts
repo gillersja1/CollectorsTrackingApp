@@ -10,7 +10,9 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.collectorstrackingapp"
+        // What Google Play and Firebase know the app as. The Kotlin code keeps its original
+        // com.example package (the namespace above): Play only looks at this.
+        applicationId = "io.github.gillersja1.collectorstracker"
         minSdk = 24
         targetSdk = 36
         versionCode = 2
