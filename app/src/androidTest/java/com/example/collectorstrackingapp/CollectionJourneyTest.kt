@@ -79,7 +79,7 @@ class CollectionJourneyTest {
         onView(withText(itemName)).perform(click())
         waitFor(withId(R.id.editTextName))
         onView(withId(R.id.button_delete)).perform(scrollTo(), click())
-        onView(withText("Delete")).perform(click())
+        onView(withId(android.R.id.button1)).perform(click()) // the dialog's "Delete"
         waitFor(homeScreen)
         eventually { if (cloudItems(uid).isEmpty()) true else null }
         onView(withText(itemName)).check(doesNotExist())
@@ -87,7 +87,8 @@ class CollectionJourneyTest {
         // Log out: back to the login screen.
         openActionBarOverflowOrOptionsMenu(InstrumentationRegistry.getInstrumentation().targetContext)
         onView(withText("Logout")).perform(click())
-        onView(withText("Logout")).perform(click())
+        // The dialog's title is "Logout" too: press its confirm button.
+        onView(withId(android.R.id.button1)).perform(click())
         waitFor(withId(R.id.loginButton))
     }
 
