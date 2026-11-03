@@ -131,7 +131,9 @@ class FirebaseSyncManager(private val context: Context) : CloudSync, PhotoSource
     override suspend fun deletePhoto(path: String): Boolean = attempt("delete photo $path", false) {
         if (!CloudPhotos.isCloudPhoto(path)) return@attempt true
         val id = CloudPhotos.idOf(path)
-        userCollection(PHOTOS)?.document(id)?.delete()?.await() ?: return@attempt false
+        val photos = userCollection(PHOTOS) ?: return@attempt false
+        // delete() completes with null on success, so don't read its result as an answer.
+        photos.document(id).delete().await()
         CloudPhotos.cacheFile(context, id).delete()
         true
     }
